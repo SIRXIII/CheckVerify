@@ -350,14 +350,6 @@ export function VerificationForm() {
           </h2>
           
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <div className="flex justify-center mb-6">
-              <div className="bg-teal-500 text-white px-6 py-3 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold">HOST L.A.</span>
-                </div>
-              </div>
-            </div>
-
             <div className="space-y-4 text-sm text-gray-700">
               <p>
                 I hereby authorize the charges already made by <strong>HOST LA PR</strong> for my reservation (via Booking / Expedia).
