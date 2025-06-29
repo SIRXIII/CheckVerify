@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminSubmissions } from './pages/AdminSubmissions';
 import { VerificationForm } from './pages/VerificationForm';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -22,6 +23,14 @@ function App() {
               element={
                 <ProtectedRoute userType="admin">
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/submissions" 
+              element={
+                <ProtectedRoute userType="admin">
+                  <AdminSubmissions />
                 </ProtectedRoute>
               } 
             />
