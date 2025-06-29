@@ -13,9 +13,11 @@ interface UploadedFile {
 interface FormData {
   firstName: string;
   lastName: string;
+  email: string;
   checkInDate: string;
   checkOutDate: string;
   reservationAmount: string;
+  bookingPlatform: string;
 }
 
 export function VerificationForm() {
@@ -25,9 +27,11 @@ export function VerificationForm() {
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
+    email: '',
     checkInDate: '',
     checkOutDate: '',
     reservationAmount: '',
+    bookingPlatform: 'Booking.com',
   });
   
   const [idDocument, setIdDocument] = useState<UploadedFile | null>(null);
@@ -50,7 +54,7 @@ export function VerificationForm() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -79,9 +83,36 @@ export function VerificationForm() {
     }
   };
 
+  const uploadFile = async (file: File, folder: string): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      throw new Error(`Failed to upload ${folder}: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('documents')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
+  const generateConfirmationNumber = (): string => {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `HLA${timestamp}${random}`;
+  };
+
   const validateForm = () => {
     if (!formData.firstName.trim()) return 'First name is required';
     if (!formData.lastName.trim()) return 'Last name is required';
+    if (!formData.email.trim()) return 'Email is required';
     if (!formData.checkInDate) return 'Check-in date is required';
     if (!formData.checkOutDate) return 'Check-out date is required';
     if (!formData.reservationAmount.trim()) return 'Reservation amount is required';
@@ -103,26 +134,56 @@ export function VerificationForm() {
     setError('');
 
     try {
+      // Upload files to Supabase Storage
+      const [idDocumentUrl, creditCardUrl] = await Promise.all([
+        uploadFile(idDocument!.file, 'id-documents'),
+        uploadFile(creditCard!.file, 'credit-cards')
+      ]);
+
       const signatureDataURL = signaturePadRef.current!.toDataURL();
-      
-      // Create a verification record
-      const { error: insertError } = await supabase
+      const confirmationNumber = generateConfirmationNumber();
+
+      // Create reservation record
+      const { data: reservationData, error: reservationError } = await supabase
+        .from('reservations')
+        .insert([
+          {
+            confirmation_number: confirmationNumber,
+            guest_name: `${formData.firstName} ${formData.lastName}`,
+            check_in_date: formData.checkInDate,
+            check_out_date: formData.checkOutDate,
+            total_amount: parseFloat(formData.reservationAmount),
+            booking_platform: formData.bookingPlatform,
+            status: 'pending',
+          },
+        ])
+        .select()
+        .single();
+
+      if (reservationError) throw reservationError;
+
+      // Create verification document record
+      const { error: verificationError } = await supabase
         .from('verification_documents')
         .insert([
           {
+            reservation_id: reservationData.id,
             id_document_name: idDocument!.name,
+            id_document_url: idDocumentUrl,
             credit_card_name: creditCard!.name,
+            credit_card_url: creditCardUrl,
             status: 'pending',
           },
         ]);
 
-      if (insertError) throw insertError;
+      if (verificationError) throw verificationError;
 
-      // Create a digital signature record
+      // Create digital signature record
       const { error: signatureError } = await supabase
         .from('digital_signatures')
         .insert([
           {
+            reservation_id: reservationData.id,
             signature_data: signatureDataURL,
             form_data: {
               ...formData,
@@ -135,6 +196,7 @@ export function VerificationForm() {
 
       setSuccess(true);
     } catch (error: any) {
+      console.error('Submission error:', error);
       setError(error.message || 'An error occurred during submission');
     } finally {
       setLoading(false);
@@ -261,6 +323,37 @@ export function VerificationForm() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your last name"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your email address"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Booking Platform *
+              </label>
+              <select
+                name="bookingPlatform"
+                value={formData.bookingPlatform}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="Booking.com">Booking.com</option>
+                <option value="Expedia">Expedia</option>
+                <option value="Hotels.com">Hotels.com</option>
+                <option value="Airbnb">Airbnb</option>
+                <option value="Direct">Direct Booking</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

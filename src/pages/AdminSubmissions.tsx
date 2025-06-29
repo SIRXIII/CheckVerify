@@ -4,11 +4,13 @@ import { supabase } from '../lib/supabase';
 
 interface GuestSubmission {
   id: string;
+  reservation_id: string;
   guest_name: string;
   email: string;
   check_in_date: string;
   check_out_date: string;
   reservation_amount: number;
+  booking_platform: string;
   id_document_name: string;
   id_document_url: string;
   credit_card_name: string;
@@ -46,44 +48,59 @@ export function AdminSubmissions() {
 
   const fetchSubmissions = async () => {
     try {
-      // Fetch verification documents with digital signatures
-      const { data: verificationData, error: verificationError } = await supabase
-        .from('verification_documents')
+      // Fetch reservations with related verification documents and digital signatures
+      const { data: reservationsData, error: reservationsError } = await supabase
+        .from('reservations')
         .select(`
           *,
+          verification_documents (
+            id,
+            id_document_name,
+            id_document_url,
+            credit_card_name,
+            credit_card_url,
+            status,
+            reviewed_by,
+            reviewed_at,
+            created_at
+          ),
           digital_signatures (
             signature_data,
-            form_data,
-            signed_at
+            form_data
           )
         `)
         .order('created_at', { ascending: false });
 
-      if (verificationError) throw verificationError;
+      if (reservationsError) throw reservationsError;
 
       // Transform the data to match our interface
-      const transformedData: GuestSubmission[] = (verificationData || []).map((verification) => {
-        const signature = verification.digital_signatures?.[0];
-        const formData = signature?.form_data || {};
-        
-        return {
-          id: verification.id,
-          guest_name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || 'N/A',
-          email: formData.email || 'N/A',
-          check_in_date: formData.checkInDate || '',
-          check_out_date: formData.checkOutDate || '',
-          reservation_amount: formData.reservationAmount || 0,
-          id_document_name: verification.id_document_name || '',
-          id_document_url: verification.id_document_url || '',
-          credit_card_name: verification.credit_card_name || '',
-          credit_card_url: verification.credit_card_url || '',
-          signature_data: signature?.signature_data || '',
-          status: verification.status,
-          created_at: verification.created_at,
-          reviewed_by: verification.reviewed_by,
-          reviewed_at: verification.reviewed_at,
-        };
-      });
+      const transformedData: GuestSubmission[] = (reservationsData || [])
+        .filter(reservation => reservation.verification_documents && reservation.verification_documents.length > 0)
+        .map((reservation) => {
+          const verification = reservation.verification_documents[0];
+          const signature = reservation.digital_signatures?.[0];
+          const formData = signature?.form_data || {};
+          
+          return {
+            id: verification.id,
+            reservation_id: reservation.id,
+            guest_name: reservation.guest_name,
+            email: formData.email || 'N/A',
+            check_in_date: reservation.check_in_date || '',
+            check_out_date: reservation.check_out_date || '',
+            reservation_amount: reservation.total_amount || 0,
+            booking_platform: reservation.booking_platform || 'N/A',
+            id_document_name: verification.id_document_name || '',
+            id_document_url: verification.id_document_url || '',
+            credit_card_name: verification.credit_card_name || '',
+            credit_card_url: verification.credit_card_url || '',
+            signature_data: signature?.signature_data || '',
+            status: verification.status,
+            created_at: verification.created_at,
+            reviewed_by: verification.reviewed_by,
+            reviewed_at: verification.reviewed_at,
+          };
+        });
       
       setSubmissions(transformedData);
       
@@ -148,17 +165,12 @@ export function AdminSubmissions() {
   };
 
   const handleSecureDownload = async (documentUrl: string, documentName: string) => {
-    // In a real implementation, this would make a secure API call to download the document
-    // For now, we'll simulate the download process
     try {
-      // This would typically be a protected endpoint that verifies admin permissions
-      // and returns the document securely
-      console.log(`Downloading ${documentName} from ${documentUrl}`);
-      
-      // Simulate download
+      // Create a temporary link to download the file
       const link = document.createElement('a');
-      link.href = documentUrl || '#';
+      link.href = documentUrl;
       link.download = documentName;
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -356,6 +368,7 @@ export function AdminSubmissions() {
                       <div>
                         <div className="font-medium text-gray-900">{submission.guest_name}</div>
                         <div className="text-sm text-gray-500">{submission.email}</div>
+                        <div className="text-xs text-gray-400">{submission.booking_platform}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -496,6 +509,10 @@ export function AdminSubmissions() {
                     <p className="text-gray-900">{selectedSubmission.email}</p>
                   </div>
                   <div>
+                    <label className="text-sm font-medium text-gray-500">Booking Platform</label>
+                    <p className="text-gray-900">{selectedSubmission.booking_platform}</p>
+                  </div>
+                  <div>
                     <label className="text-sm font-medium text-gray-500">Check-in Date</label>
                     <p className="text-gray-900">
                       {selectedSubmission.check_in_date ? 
@@ -530,7 +547,7 @@ export function AdminSubmissions() {
                   <div className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center space-x-2 mb-2">
                       <FileText className="h-5 w-5 text-blue-500" />
-                      <h5 className="font-medium text-gray-900">ID Document</h5>
+                      <h5 className="font-medium text-gray-900">Cardholder's ID</h5>
                     </div>
                     {selectedSubmission.id_document_name ? (
                       <div className="space-y-2">

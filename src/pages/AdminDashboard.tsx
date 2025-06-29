@@ -32,13 +32,15 @@ export function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch verification documents with digital signatures
-      const { data: verificationData, error } = await supabase
-        .from('verification_documents')
+      // Fetch reservations with related verification documents
+      const { data: reservationsData, error } = await supabase
+        .from('reservations')
         .select(`
           *,
-          digital_signatures (
-            form_data
+          verification_documents (
+            id,
+            status,
+            created_at
           )
         `)
         .order('created_at', { ascending: false });
@@ -46,33 +48,29 @@ export function AdminDashboard() {
       if (error) throw error;
 
       const today = new Date().toDateString();
-      const submissions = verificationData || [];
-
-      // Transform data to get guest names
-      const transformedSubmissions = submissions.map((verification) => {
-        const signature = verification.digital_signatures?.[0];
-        const formData = signature?.form_data || {};
-        
-        return {
-          id: verification.id,
-          guest_name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || 'N/A',
-          status: verification.status,
-          created_at: verification.created_at,
-        };
-      });
+      
+      // Filter only reservations that have verification documents
+      const submissionsWithVerification = (reservationsData || [])
+        .filter(reservation => reservation.verification_documents && reservation.verification_documents.length > 0)
+        .map(reservation => ({
+          id: reservation.verification_documents[0].id,
+          guest_name: reservation.guest_name,
+          status: reservation.verification_documents[0].status,
+          created_at: reservation.verification_documents[0].created_at,
+        }));
 
       const dashboardStats: DashboardStats = {
-        totalSubmissions: submissions.length,
-        pendingReview: submissions.filter(s => s.status === 'pending').length,
-        verifiedToday: submissions.filter(s => 
+        totalSubmissions: submissionsWithVerification.length,
+        pendingReview: submissionsWithVerification.filter(s => s.status === 'pending').length,
+        verifiedToday: submissionsWithVerification.filter(s => 
           s.status === 'verified' && 
           new Date(s.created_at).toDateString() === today
         ).length,
-        rejectedToday: submissions.filter(s => 
+        rejectedToday: submissionsWithVerification.filter(s => 
           s.status === 'rejected' && 
           new Date(s.created_at).toDateString() === today
         ).length,
-        recentSubmissions: transformedSubmissions.slice(0, 5),
+        recentSubmissions: submissionsWithVerification.slice(0, 5),
       };
 
       setStats(dashboardStats);
