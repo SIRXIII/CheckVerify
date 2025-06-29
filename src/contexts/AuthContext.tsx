@@ -31,11 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        // TEMPORARY BYPASS: Comment out fetchUserType and force admin access
-        // fetchUserType(session.user.id);
-        console.log('🚨 TEMPORARY BYPASS: Setting user type to admin for development');
-        setUserType('admin');
-        setLoading(false);
+        fetchUserType(session.user.id);
       } else {
         setLoading(false);
       }
@@ -46,11 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
-          // TEMPORARY BYPASS: Comment out fetchUserType and force admin access
-          // fetchUserType(session.user.id);
-          console.log('🚨 TEMPORARY BYPASS: Setting user type to admin for development');
-          setUserType('admin');
-          setLoading(false);
+          fetchUserType(session.user.id);
         } else {
           setUserType(null);
           setLoading(false);
