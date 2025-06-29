@@ -13,6 +13,7 @@ interface UploadedFile {
 interface FormData {
   firstName: string;
   lastName: string;
+  email: string;
   checkInDate: string;
   checkOutDate: string;
   reservationAmount: string;
@@ -26,6 +27,7 @@ export function VerificationForm() {
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
+    email: '',
     checkInDate: '',
     checkOutDate: '',
     reservationAmount: '',
@@ -110,6 +112,7 @@ export function VerificationForm() {
   const validateForm = () => {
     if (!formData.firstName.trim()) return 'First name is required';
     if (!formData.lastName.trim()) return 'Last name is required';
+    if (!formData.email.trim()) return 'Email is required';
     if (!formData.checkInDate) return 'Check-in date is required';
     if (!formData.checkOutDate) return 'Check-out date is required';
     if (!formData.reservationAmount.trim()) return 'Reservation amount is required';
@@ -140,12 +143,11 @@ export function VerificationForm() {
       const signatureDataURL = signaturePadRef.current!.toDataURL();
       const confirmationNumber = generateConfirmationNumber();
 
-      // Create reservation record with explicit traveler_id as null for anonymous users
+      // Create reservation record
       const { data: reservationData, error: reservationError } = await supabase
         .from('reservations')
         .insert([
           {
-            traveler_id: null, // Explicitly set to null for anonymous users
             confirmation_number: confirmationNumber,
             guest_name: `${formData.firstName} ${formData.lastName}`,
             check_in_date: formData.checkInDate,
@@ -320,6 +322,19 @@ export function VerificationForm() {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your last name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your email address"
               />
             </div>
             <div>
