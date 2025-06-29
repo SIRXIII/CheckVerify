@@ -116,7 +116,7 @@ export function VerificationForm() {
     if (!formData.checkInDate) return 'Check-in date is required';
     if (!formData.checkOutDate) return 'Check-out date is required';
     if (!formData.reservationAmount.trim()) return 'Reservation amount is required';
-    if (!idDocument) return 'Cardholder\'s ID is required';
+    if (!idDocument) return 'Cardholder\'s/Booker\'s ID is required';
     if (!creditCard) return 'Credit card image is required';
     if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) return 'Digital signature is required';
     if (!agreed) return 'You must agree to the payment processing consent';
@@ -392,8 +392,8 @@ export function VerificationForm() {
             <FileUploadArea
               onFileSelect={(file) => handleFileUpload(file, 'id')}
               accept="image/*,.pdf"
-              title="Cardholder's ID"
-              description="Upload your driver's license or passport"
+              title="Cardholder's/Booker's ID"
+              description="Upload your driver's license or passport (upload both, if different)"
               icon={User}
               uploadedFile={idDocument}
             />
@@ -402,7 +402,7 @@ export function VerificationForm() {
               onFileSelect={(file) => handleFileUpload(file, 'credit_card')}
               accept="image/*,.pdf"
               title="Credit Card"
-              description="Credit Card must match the reservation (cover CVV)"
+              description="The credit card must match the card submitted on the booking website"
               icon={CreditCard}
               uploadedFile={creditCard}
             />
