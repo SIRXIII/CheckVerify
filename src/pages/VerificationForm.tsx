@@ -85,7 +85,7 @@ export function VerificationForm() {
     if (!formData.checkInDate) return 'Check-in date is required';
     if (!formData.checkOutDate) return 'Check-out date is required';
     if (!formData.reservationAmount.trim()) return 'Reservation amount is required';
-    if (!idDocument) return 'ID document is required';
+    if (!idDocument) return 'Cardholder\'s ID is required';
     if (!creditCard) return 'Credit card image is required';
     if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) return 'Digital signature is required';
     if (!agreed) return 'You must agree to the payment processing consent';
@@ -299,7 +299,7 @@ export function VerificationForm() {
             <FileUploadArea
               onFileSelect={(file) => handleFileUpload(file, 'id')}
               accept="image/*,.pdf"
-              title="ID Document"
+              title="Cardholder's ID"
               description="Upload your driver's license or passport"
               icon={User}
               uploadedFile={idDocument}
@@ -309,7 +309,7 @@ export function VerificationForm() {
               onFileSelect={(file) => handleFileUpload(file, 'credit_card')}
               accept="image/*,.pdf"
               title="Credit Card"
-              description="Upload image of your credit card (cover CVV)"
+              description="Credit Card must match the reservation (cover CVV)"
               icon={CreditCard}
               uploadedFile={creditCard}
             />
@@ -350,16 +350,69 @@ export function VerificationForm() {
           </h2>
           
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3">Payment Processing Consent</h3>
-            <p className="text-sm text-gray-700 mb-4">
-              I, <strong>{formData.firstName} {formData.lastName}</strong>, hereby authorize Host LA to process payment 
-              in the amount of <strong>${formData.reservationAmount}</strong> for my hotel reservation from{' '}
-              <strong>{formData.checkInDate}</strong> to <strong>{formData.checkOutDate}</strong>.
-            </p>
-            <p className="text-sm text-gray-700">
-              I understand that this authorization is binding and that I am responsible for all charges incurred during my stay.
-              I confirm that all information provided is accurate and complete.
-            </p>
+            <div className="flex justify-center mb-6">
+              <div className="bg-teal-500 text-white px-6 py-3 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <span className="text-2xl font-bold">HOST L.A.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 text-sm text-gray-700">
+              <p>
+                I hereby authorize the charges already made by <strong>HOST LA PR</strong> for my reservation (via Booking / Expedia).
+              </p>
+              
+              <p>I understand and agree to the policies stipulated on the website upon booking – they are as follows:</p>
+              
+              <div className="space-y-3 ml-4">
+                <div className="flex items-start space-x-3">
+                  <span className="font-semibold text-gray-900 min-w-[20px]">1.</span>
+                  <span>The <u>total rental amount</u> includes all applicable taxes and fees.</span>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <span className="font-semibold text-gray-900 min-w-[20px]">2.</span>
+                  <span>Any additional charges incurred during the rental period (e.g., damages, extra services) will be charged to the above credit card.</span>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <span className="font-semibold text-gray-900 min-w-[20px]">3.</span>
+                  <span>Cancellations made within 30 days from the check-in date are NON-refundable.</span>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <span className="font-semibold text-gray-900 min-w-[20px]">4.</span>
+                  <span>NO-SHOWS are also NON-refundable. Date changes will be handled on a case by case basis at the discretion of management, depending on availability.</span>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <span className="font-semibold text-gray-900 min-w-[20px]">5.</span>
+                  <span>I am responsible for any damages to the property during the rental period and authorize the above credit card to be charged for any necessary repairs or replacements.</span>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <span className="font-semibold text-gray-900 min-w-[20px]">6.</span>
+                  <span>Eligible refunds will be made to the original form of payment, absolutely no exceptions.</span>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <span className="font-semibold text-gray-900 min-w-[20px]">7.</span>
+                  <span><strong>IMPORTANT: Signature on this form must match the signature of the cardholder's ID.</strong></span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-300">
+                <p className="font-semibold text-gray-900 mb-4">Please Sign and Date</p>
+                <p className="mb-4">
+                  <strong>Return the completed and signed form to the following:</strong><br />
+                  HOST L.A.<br />
+                  Business: 323-673-4171 / 424-666-8823<br />
+                  Email: hostla2@icloud.com<br />
+                  Los Angeles, CA
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="border-2 border-gray-300 rounded-lg p-4">
@@ -392,7 +445,7 @@ export function VerificationForm() {
             />
             <span className="text-sm text-gray-700">
               I hereby consent to Host LA processing my payment and confirm that all information provided is accurate. 
-              I understand that this digital signature has the same legal effect as a handwritten signature.
+              I understand that this digital signature has the same legal effect as a handwritten signature and matches my cardholder's ID.
             </span>
           </label>
         </div>
