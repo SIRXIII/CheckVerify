@@ -38,13 +38,22 @@ export function Login() {
       <div className="max-w-md w-full space-y-8">
         <div className="bg-white rounded-xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="h-8 w-8 text-white" />
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <div className="relative">
+                <Shield className="h-10 w-10 text-white" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-blue-600"></div>
+              </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">
+            <div className="mb-4">
+              <div className="flex justify-center items-center space-x-1 mb-2">
+                <span className="text-2xl font-bold text-gray-900">Check <span className="text-green-500">IN</span></span>
+              </div>
+              <span className="text-lg font-medium text-gray-600">Verify</span>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Admin Access
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600">
               {isSignUp ? 'Create admin account' : 'Sign in to admin dashboard'}
             </p>
           </div>
@@ -98,7 +107,7 @@ export function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
             </button>
