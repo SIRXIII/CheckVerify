@@ -39,6 +39,7 @@ export function VerificationForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
@@ -195,6 +196,7 @@ export function VerificationForm() {
       if (signatureError) throw signatureError;
 
       setSuccess(true);
+      setShowSuccess(true);
     } catch (error: any) {
       console.error('Submission error:', error);
       setError(error.message || 'An error occurred during submission');
@@ -235,17 +237,20 @@ export function VerificationForm() {
             </p>
           </div>
         ) : (
-          <label className="cursor-pointer">
-            <span className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-              Choose File
-            </span>
-            <input
-              type="file"
-              accept={accept}
-              onChange={(e) => e.target.files?.[0] && onFileSelect(e.target.files[0])}
-              className="hidden"
-            />
-          </label>
+          <div>
+            <label className="cursor-pointer">
+              <span className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                Choose File
+              </span>
+              <input
+                type="file"
+                accept={accept}
+                onChange={(e) => e.target.files?.[0] && onFileSelect(e.target.files[0])}
+                className="hidden"
+              />
+            </label>
+            <small className="block mt-2 text-gray-500 text-xs">JPG/PNG, max 5 MB</small>
+          </div>
         )}
       </div>
     </div>
@@ -276,10 +281,29 @@ export function VerificationForm() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Logo */}
+      <div className="mb-6">
+        <img 
+          src="/Check-In Verify LOGO.png" 
+          alt="Check-In Verify Logo" 
+          className="h-12 w-auto"
+        />
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Hotel Check-in Verification</h1>
         <p className="text-gray-600">Complete your verification to streamline your check-in process</p>
       </div>
+
+      {/* Success Banner */}
+      {showSuccess && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="h-5 w-5" />
+            <span>✅ Check-in complete. Thank you!</span>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -516,6 +540,7 @@ export function VerificationForm() {
                 Clear Signature
               </button>
             </div>
+            <small className="block mt-2 text-gray-500 text-xs">Digital signature required</small>
           </div>
         </div>
 
@@ -536,14 +561,21 @@ export function VerificationForm() {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end">
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             {loading ? 'Submitting...' : 'Submit Verification'}
           </button>
+          
+          {/* Privacy & Terms Links */}
+          <p className="text-xs text-gray-500 mt-2 text-center sm:text-right">
+            <a href="/privacy.html" target="_blank" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>
+            <span className="mx-1">·</span>
+            <a href="/terms.html" target="_blank" className="text-blue-600 hover:text-blue-700">Terms of Service</a>
+          </p>
         </div>
       </div>
     </div>
