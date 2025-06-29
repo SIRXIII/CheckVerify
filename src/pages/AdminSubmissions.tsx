@@ -6,7 +6,7 @@ interface GuestSubmission {
   id: string;
   reservation_id: string;
   guest_name: string;
-  email: string;
+  email?: string;
   check_in_date: string;
   check_out_date: string;
   reservation_amount: number;
@@ -85,7 +85,7 @@ export function AdminSubmissions() {
             id: verification.id,
             reservation_id: reservation.id,
             guest_name: reservation.guest_name,
-            email: formData.email || 'N/A',
+            email: formData.email || undefined,
             check_in_date: reservation.check_in_date || '',
             check_out_date: reservation.check_out_date || '',
             reservation_amount: reservation.total_amount || 0,
@@ -128,7 +128,7 @@ export function AdminSubmissions() {
       filtered = filtered.filter(
         (submission) =>
           submission.guest_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          submission.email.toLowerCase().includes(searchTerm.toLowerCase())
+          (submission.email && submission.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -295,7 +295,7 @@ export function AdminSubmissions() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by guest name or email..."
+                  placeholder="Search by guest name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -367,7 +367,7 @@ export function AdminSubmissions() {
                     <td className="px-6 py-4">
                       <div>
                         <div className="font-medium text-gray-900">{submission.guest_name}</div>
-                        <div className="text-sm text-gray-500">{submission.email}</div>
+                        {submission.email && <div className="text-sm text-gray-500">{submission.email}</div>}
                         <div className="text-xs text-gray-400">{submission.booking_platform}</div>
                       </div>
                     </td>
@@ -504,10 +504,12 @@ export function AdminSubmissions() {
                     <label className="text-sm font-medium text-gray-500">Name</label>
                     <p className="text-gray-900 font-medium">{selectedSubmission.guest_name}</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Email</label>
-                    <p className="text-gray-900">{selectedSubmission.email}</p>
-                  </div>
+                  {selectedSubmission.email && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Email</label>
+                      <p className="text-gray-900">{selectedSubmission.email}</p>
+                    </div>
+                  )}
                   <div>
                     <label className="text-sm font-medium text-gray-500">Booking Platform</label>
                     <p className="text-gray-900">{selectedSubmission.booking_platform}</p>
