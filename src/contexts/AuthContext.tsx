@@ -58,12 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('user_profiles')
         .select('user_type')
         .eq('id', userId)
-        .single();
+        .limit(1);
 
       if (error) throw error;
-      setUserType(data.user_type);
+      
+      if (data && data.length > 0) {
+        setUserType(data[0].user_type);
+      } else {
+        setUserType(null);
+      }
     } catch (error) {
       console.error('Error fetching user type:', error);
+      setUserType(null);
     } finally {
       setLoading(false);
     }
