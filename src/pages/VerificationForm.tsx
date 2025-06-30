@@ -596,6 +596,23 @@ export function VerificationForm() {
               <span className="mx-2">·</span>
               <a href="/terms.html" target="_blank" className="text-blue-600 hover:text-blue-700 transition-colors">Terms of Service</a>
             </p>
+              {/* Security badge line */}
+  <p
+    style={{ fontSize: '12px', color: '#555', marginTop: '6px' }}
+    className="text-center"
+  >
+    🔒 Your ID and card images are encrypted in transit and stored securely.{' '}
+    <a
+      href="/privacy.html"
+      target="_blank"
+      style={{ textDecoration: 'underline' }}
+      className="text-blue-600 hover:text-blue-700"
+    >
+      Learn more
+    </a>
+    .
+  </p>
+
           </div>
         </div>
       </div>
