@@ -17,7 +17,7 @@ export function Footer() {
             </div>
           </div>
           <div className="text-sm text-gray-300">
-            © 2025 Host LA. All rights reserved. Secure • Compliant • Trusted
+            © 2025 CheckIN Verify. All rights reserved. Secure • Compliant • Trusted
           </div>
         </div>
       </div>
