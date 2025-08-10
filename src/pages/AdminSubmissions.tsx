@@ -12,9 +12,9 @@ interface GuestSubmission {
   reservation_amount: number;
   booking_platform: string;
   id_document_name: string;
-  id_document_url: string;
+  id_document_path: string;
   credit_card_name: string;
-  credit_card_url: string;
+  credit_card_path: string;
   signature_data: string;
   status: 'pending' | 'verified' | 'rejected';
   created_at: string;
@@ -26,6 +26,7 @@ export function AdminSubmissions() {
   const [submissions, setSubmissions] = useState<GuestSubmission[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<GuestSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState('');
@@ -39,7 +40,17 @@ export function AdminSubmissions() {
   });
 
   useEffect(() => {
-    fetchSubmissions();
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const isAdminUser = session?.user?.app_metadata?.role === 'admin';
+      setIsAdmin(!!isAdminUser);
+      if (isAdminUser) {
+        fetchSubmissions();
+      } else {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -56,9 +67,9 @@ export function AdminSubmissions() {
           verification_documents (
             id,
             id_document_name,
-            id_document_url,
+            id_document_path,
             credit_card_name,
-            credit_card_url,
+            credit_card_path,
             status,
             reviewed_by,
             reviewed_at,
@@ -91,9 +102,9 @@ export function AdminSubmissions() {
             reservation_amount: reservation.total_amount || 0,
             booking_platform: reservation.booking_platform || 'N/A',
             id_document_name: verification.id_document_name || '',
-            id_document_url: verification.id_document_url || '',
+            id_document_path: verification.id_document_path || '',
             credit_card_name: verification.credit_card_name || '',
-            credit_card_url: verification.credit_card_url || '',
+            credit_card_path: verification.credit_card_path || '',
             signature_data: signature?.signature_data || '',
             status: verification.status,
             created_at: verification.created_at,
@@ -164,12 +175,21 @@ export function AdminSubmissions() {
     }
   };
 
-  const handleSecureDownload = async (documentUrl: string, documentName: string) => {
+  const handleSecureDownload = async (filePath: string, fileName: string) => {
     try {
-      // Create a temporary link to download the file
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || session.user.app_metadata?.role !== 'admin') {
+        throw new Error('Unauthorized');
+      }
+
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(filePath, 60);
+      if (error) throw error;
+
       const link = document.createElement('a');
-      link.href = documentUrl;
-      link.download = documentName;
+      link.href = data.signedUrl;
+      link.download = fileName;
       link.target = '_blank';
       document.body.appendChild(link);
       link.click();
@@ -215,6 +235,20 @@ export function AdminSubmissions() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
+            <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+            <p className="text-gray-600">You do not have permission to view this page.</p>
           </div>
         </div>
       </div>
@@ -400,7 +434,7 @@ export function AdminSubmissions() {
                             <span className="text-xs text-gray-600">
                               {submission.id_document_name ? (
                                 <button
-                                  onClick={() => handleSecureDownload(submission.id_document_url, submission.id_document_name)}
+                                  onClick={() => handleSecureDownload(submission.id_document_path, submission.id_document_name)}
                                   className="text-blue-600 hover:text-blue-800 underline"
                                 >
                                   ID: {submission.id_document_name}
@@ -415,7 +449,7 @@ export function AdminSubmissions() {
                             <span className="text-xs text-gray-600">
                               {submission.credit_card_name ? (
                                 <button
-                                  onClick={() => handleSecureDownload(submission.credit_card_url, submission.credit_card_name)}
+                                  onClick={() => handleSecureDownload(submission.credit_card_path, submission.credit_card_name)}
                                   className="text-blue-600 hover:text-blue-800 underline"
                                 >
                                   Card: {submission.credit_card_name}
@@ -560,7 +594,7 @@ export function AdminSubmissions() {
                         <div className="space-y-2">
                           <p className="text-sm text-gray-600">{selectedSubmission.id_document_name}</p>
                           <button
-                            onClick={() => handleSecureDownload(selectedSubmission.id_document_url, selectedSubmission.id_document_name)}
+                            onClick={() => handleSecureDownload(selectedSubmission.id_document_path, selectedSubmission.id_document_name)}
                             className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors"
                           >
                             <Download className="h-4 w-4" />
@@ -581,7 +615,7 @@ export function AdminSubmissions() {
                         <div className="space-y-2">
                           <p className="text-sm text-gray-600">{selectedSubmission.credit_card_name}</p>
                           <button
-                            onClick={() => handleSecureDownload(selectedSubmission.credit_card_url, selectedSubmission.credit_card_name)}
+                            onClick={() => handleSecureDownload(selectedSubmission.credit_card_path, selectedSubmission.credit_card_name)}
                             className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors"
                           >
                             <Download className="h-4 w-4" />
