@@ -64,6 +64,19 @@ export function VerificationForm() {
   };
 
   const handleFileUpload = (file: File, type: 'id' | 'credit_card') => {
+    const maxSize = 5 * 1024 * 1024; // 5 MB
+    const allowedTypes = ['image/jpeg', 'image/png'];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError('Unsupported file format. Please upload a JPG or PNG image.');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      setError('File size exceeds the 5 MB limit.');
+      return;
+    }
+
     const uploadedFile: UploadedFile = {
       name: file.name,
       size: file.size,
@@ -76,6 +89,7 @@ export function VerificationForm() {
     } else {
       setCreditCard(uploadedFile);
     }
+    setError('');
   };
 
   const clearSignature = () => {
@@ -122,6 +136,8 @@ export function VerificationForm() {
     if (!formData.checkInDate) return 'Check-in date is required';
     if (!formData.checkOutDate) return 'Check-out date is required';
     if (!formData.reservationAmount.trim()) return 'Reservation amount is required';
+    if (isNaN(Number(formData.reservationAmount))) return 'Reservation amount must be a number';
+    if (Number(formData.reservationAmount) <= 0) return 'Reservation amount must be positive';
     if (!idDocument) return 'Cardholder\'s/Booker\'s ID is required';
     if (!creditCard) return 'Credit card image is required';
     if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) return 'Digital signature is required';

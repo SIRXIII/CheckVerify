@@ -10,9 +10,27 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
 
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+
+  const ADMIN_INVITE_CODE = import.meta.env.VITE_ADMIN_INVITE_CODE;
+
+  const handleToggle = () => {
+    if (isSignUp) {
+      setIsSignUp(false);
+      setInviteCode('');
+      return;
+    }
+    const code = window.prompt('Enter admin invite code');
+    if (code === ADMIN_INVITE_CODE) {
+      setInviteCode(code);
+      setIsSignUp(true);
+    } else {
+      setError('Invalid invite code');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,17 +39,26 @@ export function Login() {
 
     try {
       if (isSignUp) {
+        if (inviteCode !== ADMIN_INVITE_CODE) {
+          throw new Error('Invalid invite code');
+        }
         await signUp(email, password, 'admin');
       } else {
         await signIn(email, password);
       }
       navigate('/admin/dashboard');
+un33rr-codex/update-supabase-bucket-to-private-and-secure-urls
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
         setError('An error occurred');
       }
+
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      setError(message);
+main
     } finally {
       setLoading(false);
     }
@@ -102,6 +129,23 @@ export function Login() {
               </div>
             </div>
 
+            {isSignUp && (
+              <div>
+                <label htmlFor="invite" className="block text-sm font-medium text-gray-700 mb-2">
+                  Admin Invite Code
+                </label>
+                <input
+                  id="invite"
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Enter invite code"
+                />
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
@@ -113,10 +157,10 @@ export function Login() {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={handleToggle}
               className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
             >
-              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              {isSignUp ? 'Back to sign in' : 'Have an admin invite? Sign up'}
             </button>
           </div>
         </div>
