@@ -117,6 +117,8 @@ export function VerificationForm() {
     if (!formData.checkInDate) return 'Check-in date is required';
     if (!formData.checkOutDate) return 'Check-out date is required';
     if (!formData.reservationAmount.trim()) return 'Reservation amount is required';
+    if (isNaN(Number(formData.reservationAmount))) return 'Reservation amount must be a number';
+    if (Number(formData.reservationAmount) <= 0) return 'Reservation amount must be positive';
     if (!idDocument) return 'Cardholder\'s/Booker\'s ID is required';
     if (!creditCard) return 'Credit card image is required';
     if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) return 'Digital signature is required';
