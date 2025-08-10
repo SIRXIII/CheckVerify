@@ -47,18 +47,9 @@ export function Login() {
         await signIn(email, password);
       }
       navigate('/admin/dashboard');
-un33rr-codex/update-supabase-bucket-to-private-and-secure-urls
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('An error occurred');
-      }
-
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An error occurred';
       setError(message);
-main
     } finally {
       setLoading(false);
     }
