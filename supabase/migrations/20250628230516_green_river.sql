@@ -30,9 +30,9 @@
       - `id` (uuid, primary key)
       - `traveler_id` (uuid, references user_profiles)
       - `reservation_id` (uuid, references reservations)
-      - `id_document_url` (text)
+      - `id_document_path` (text)
       - `id_document_name` (text)
-      - `credit_card_url` (text)
+      - `credit_card_path` (text)
       - `credit_card_name` (text)
       - `status` (text) - 'pending', 'verified', 'rejected'
       - `reviewed_by` (uuid, references user_profiles)
@@ -87,9 +87,9 @@ CREATE TABLE IF NOT EXISTS verification_documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   traveler_id uuid REFERENCES user_profiles(id) ON DELETE CASCADE,
   reservation_id uuid REFERENCES reservations(id) ON DELETE CASCADE,
-  id_document_url text DEFAULT '',
+  id_document_path text DEFAULT '',
   id_document_name text DEFAULT '',
-  credit_card_url text DEFAULT '',
+  credit_card_path text DEFAULT '',
   credit_card_name text DEFAULT '',
   status text DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected')),
   reviewed_by uuid REFERENCES user_profiles(id),
