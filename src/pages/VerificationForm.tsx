@@ -64,6 +64,19 @@ export function VerificationForm() {
   };
 
   const handleFileUpload = (file: File, type: 'id' | 'credit_card') => {
+    const maxSize = 5 * 1024 * 1024; // 5 MB
+    const allowedTypes = ['image/jpeg', 'image/png'];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError('Unsupported file format. Please upload a JPG or PNG image.');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      setError('File size exceeds the 5 MB limit.');
+      return;
+    }
+
     const uploadedFile: UploadedFile = {
       name: file.name,
       size: file.size,
@@ -76,6 +89,7 @@ export function VerificationForm() {
     } else {
       setCreditCard(uploadedFile);
     }
+    setError('');
   };
 
   const clearSignature = () => {
@@ -197,9 +211,13 @@ export function VerificationForm() {
 
       setSuccess(true);
       setShowSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submission error:', error);
-      setError(error.message || 'An error occurred during submission');
+      if (error instanceof Error) {
+        setError(error.message || 'An error occurred during submission');
+      } else {
+        setError('An error occurred during submission');
+      }
     } finally {
       setLoading(false);
     }
