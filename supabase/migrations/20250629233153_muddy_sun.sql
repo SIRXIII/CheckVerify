@@ -63,12 +63,12 @@ CREATE POLICY "Admins can update all reservations"
     )
   );
 
--- Add a development policy for easier testing
-CREATE POLICY "dev-open-insert"
-  ON reservations
-  FOR INSERT
-  TO public
-  WITH CHECK (true);
+-- Development policy moved to supabase/dev/dev-open-insert.sql for local testing
+-- CREATE POLICY "dev-open-insert"
+--   ON reservations
+--   FOR INSERT
+--   TO public
+--   WITH CHECK (true);
 
 -- Ensure verification_documents allows anonymous inserts
 DROP POLICY IF EXISTS "Anyone can insert verification documents" ON verification_documents;
