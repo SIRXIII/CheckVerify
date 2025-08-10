@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, Users, FileText, Calendar, Shield } from 'lucide-react';
+import { Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, Users, FileText, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface GuestSubmission {
   id: string;
@@ -37,6 +38,7 @@ export function AdminSubmissions() {
     rejected: 0,
     today: 0,
   });
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchSubmissions();
@@ -146,17 +148,19 @@ export function AdminSubmissions() {
   };
 
   const updateSubmissionStatus = async (id: string, status: 'verified' | 'rejected') => {
+    if (!user) return;
     try {
       const { error } = await supabase
         .from('verification_documents')
-        .update({ 
+        .update({
           status,
+          reviewed_by: user.id,
           reviewed_at: new Date().toISOString()
         })
         .eq('id', id);
 
       if (error) throw error;
-      
+
       // Refresh data
       fetchSubmissions();
     } catch (error) {
@@ -438,6 +442,9 @@ export function AdminSubmissions() {
                           {getStatusIcon(submission.status)}
                           <span className="capitalize">{submission.status}</span>
                         </div>
+                        {submission.reviewed_by && (
+                          <div className="text-xs text-gray-500 mt-1">Reviewer: {submission.reviewed_by}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
@@ -544,6 +551,12 @@ export function AdminSubmissions() {
                         <span className="capitalize">{selectedSubmission.status}</span>
                       </div>
                     </div>
+                    {selectedSubmission.reviewed_by && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Reviewed By</label>
+                        <p className="text-gray-900">{selectedSubmission.reviewed_by}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
