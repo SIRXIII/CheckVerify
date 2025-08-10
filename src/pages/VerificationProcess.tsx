@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, CheckCircle, AlertCircle, FileText, CreditCard, User } from 'lucide-react';
+import { CheckCircle, AlertCircle, CreditCard, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -60,8 +60,12 @@ export function VerificationProcess() {
 
       setSuccess(true);
       setCurrentStep(3);
-    } catch (error: any) {
-      setError(error.message || 'An error occurred during upload');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message || 'An error occurred during upload');
+      } else {
+        setError('An error occurred during upload');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, FileText, Clock, CheckCircle, XCircle, Calendar, TrendingUp, Shield, Eye } from 'lucide-react';
+import { Users, FileText, Clock, CheckCircle, XCircle, TrendingUp, Eye } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface DashboardStats {

@@ -97,11 +97,16 @@ export function VerificationForm() {
       throw new Error(`Failed to upload ${folder}: ${uploadError.message}`);
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    // Generate a short-lived signed URL (not stored) to ensure the file is accessible
+    const { error: signedUrlError } = await supabase.storage
       .from('documents')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 60);
+    if (signedUrlError) {
+      throw new Error(`Failed to create signed URL for ${folder}: ${signedUrlError.message}`);
+    }
 
-    return publicUrl;
+    // Return the file path for later retrieval with signed URLs
+    return filePath;
   };
 
   const generateConfirmationNumber = (): string => {
@@ -136,7 +141,7 @@ export function VerificationForm() {
 
     try {
       // Upload files to Supabase Storage
-      const [idDocumentUrl, creditCardUrl] = await Promise.all([
+      const [idDocumentPath, creditCardPath] = await Promise.all([
         uploadFile(idDocument!.file, 'id-documents'),
         uploadFile(creditCard!.file, 'credit-cards')
       ]);
@@ -170,9 +175,9 @@ export function VerificationForm() {
           {
             reservation_id: reservationData.id,
             id_document_name: idDocument!.name,
-            id_document_url: idDocumentUrl,
+            id_document_path: idDocumentPath,
             credit_card_name: creditCard!.name,
-            credit_card_url: creditCardUrl,
+            credit_card_path: creditCardPath,
             status: 'pending',
           },
         ]);
@@ -197,9 +202,13 @@ export function VerificationForm() {
 
       setSuccess(true);
       setShowSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submission error:', error);
-      setError(error.message || 'An error occurred during submission');
+      if (error instanceof Error) {
+        setError(error.message || 'An error occurred during submission');
+      } else {
+        setError('An error occurred during submission');
+      }
     } finally {
       setLoading(false);
     }
