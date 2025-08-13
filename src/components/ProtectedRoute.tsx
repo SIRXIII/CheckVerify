@@ -20,7 +20,7 @@ export function ProtectedRoute({ children, userType }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (userType && currentUserType !== userType) {
