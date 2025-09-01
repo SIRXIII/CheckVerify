@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, Users, FileText, Calendar } from 'lucide-react';
+import { Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, Users, FileText, Calendar, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
