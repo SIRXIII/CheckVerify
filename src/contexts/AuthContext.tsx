@@ -55,19 +55,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserType = async (userId: string) => {
     try {
+      // Primary path: use supabase-js which attaches the user's access token
       const { data, error } = await supabase
         .from('user_profiles')
         .select('user_type')
         .eq('id', userId)
-        .limit(1);
+        .single();
 
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setUserType(data[0].user_type);
-      } else {
-        setUserType(null);
+      if (!error && data) {
+        setUserType(data.user_type as 'traveler' | 'admin');
+        return;
       }
+
+      // If the select failed (often due to auth headers being stripped in some environments),
+      // try a direct REST request with explicit Authorization + apikey headers.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
+      const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+      if (accessToken && supabaseUrl && supabaseAnonKey) {
+        const url = `${supabaseUrl}/rest/v1/user_profiles?select=user_type&id=eq.${userId}&limit=1`;
+        const res = await fetch(url, {
+          headers: {
+            Accept: 'application/json',
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${accessToken}`,
+          },
+          credentials: 'omit',
+        });
+
+        if (res.ok) {
+          const rows = (await res.json()) as Array<{ user_type: 'traveler' | 'admin' }>;
+          setUserType(rows?.[0]?.user_type ?? null);
+          return;
+        } else {
+          const errText = await res.text().catch(() => '');
+          console.error('Error fetching user type (REST fallback):', res.status, errText);
+        }
+      }
+
+      // If we reach here, we couldn't determine the user type
+      setUserType(null);
     } catch (error) {
       console.error('Error fetching user type:', error);
       setUserType(null);

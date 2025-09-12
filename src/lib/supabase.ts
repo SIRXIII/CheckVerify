@@ -42,5 +42,11 @@ function createFallbackClient(): SupabaseClient<any, any, any> {
 
 export const supabase: SupabaseClient<any, any, any> =
   supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
+      })
     : createFallbackClient();
