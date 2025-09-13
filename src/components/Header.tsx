@@ -26,24 +26,24 @@ export default function Header() {
           </Link>
 
           <nav className="flex items-center space-x-6">
-            {authLoading ? null : user && userType === 'admin' ? (
-              <>
-                <Link
-                  to="/admin/dashboard"
-                  className="flex items-center space-x-1 hover:text-green-400 transition-colors"
-                >
-                  <span>Dashboard</span>
-                </Link>
+            {!authLoading && (
+              user && userType === 'admin' ? (
+                <>
+                  <Link
+                    to="/admin/dashboard"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg"
+                  >
+                    Dashboard
+                  </Link>
 
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center space-x-1 hover:text-green-400 transition-colors"
-                >
-                  <span>Sign Out</span>
-                </button>
-              </>
-            ) : (
-              !authLoading && (
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-1 hover:text-green-400 transition-colors"
+                  >
+                    <span>Sign Out</span>
+                  </button>
+                </>
+              ) : (
                 <Link
                   to="/admin/login"
                   className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg"
