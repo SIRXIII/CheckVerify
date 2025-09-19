@@ -21,8 +21,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-3 hover:text-green-400">
-            <span className="text-xl font-bold tracking-wide">IN</span>
-            <span className="text-sm font-medium text-blue-200">verify</span>
+            <span className="text-xl font-bold tracking-wide">Check</span>
+            <span className="text-xl font-bold tracking-wide text-green-400">IN</span>
+            <span className="text-xl font-medium">Verify</span>
           </Link>
 
           <nav className="flex items-center space-x-6">
