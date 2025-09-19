@@ -31,14 +31,21 @@ export default function Header() {
                 <>
                   <Link
                     to="/admin/dashboard"
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg"
+                    className="text-white hover:text-yellow-400 font-medium transition-colors"
                   >
                     Dashboard
+                  </Link>
+                  
+                  <Link
+                    to="/admin/submissions"
+                    className="text-white hover:text-yellow-400 font-medium transition-colors"
+                  >
+                    Submissions
                   </Link>
 
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center space-x-1 hover:text-green-400 transition-colors"
+                    className="flex items-center space-x-1 hover:text-yellow-400 transition-colors"
                   >
                     <span>Sign Out</span>
                   </button>
@@ -46,7 +53,7 @@ export default function Header() {
               ) : (
                 <Link
                   to="/admin/login"
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 px-4 py-2 rounded-lg font-medium transition-colors shadow-lg"
                 >
                   Admin Login
                 </Link>
