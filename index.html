@@ -1,17 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Check IN Verify - Secure Hotel Document Upload</title>
-    <meta name="description" content="Secure document verification and payment consent for hotel check-in. Upload your ID and credit card safely." />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure Hotel Check-in Verification System">
+    <title>Check IN Verify - Secure Hotel Check-in</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: white;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 24px; font-weight: bold; color: #1e3a8a; }
+        .admin-btn {
+            background: #fbbf24;
+            color: #1e3a8a;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+        }
+        h1 { font-size: 48px; margin-bottom: 20px; }
+        p { font-size: 20px; margin-bottom: 30px; }
+        .btn {
+            background: white;
+            color: #1e3a8a;
+            padding: 15px 40px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Check IN Verify</div>
+        <a href="admin.html" class="admin-btn">Admin Login</a>
+    </div>
+    <div class="hero">
+        <div>
+            <h1>Secure Hotel Check-in Verification</h1>
+            <p>Upload your documents safely before arrival</p>
+            <a href="#" class="btn">Start Verification</a>
+        </div>
+    </div>
+</body>
 </html>
-<div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-    <a href="admin.html" style="color: #667eea; text-decoration: none; font-size: 14px;">Admin Login</a>
-</div>
