@@ -1,66 +1,204 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Secure Hotel Check-in Verification System">
-    <title>Check IN Verify - Secure Hotel Check-in</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            min-height: 100vh;
+import React, { useState } from 'react';
+import { AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
+
+export default function RevertChanges() {
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState([]);
+
+  const TOKEN = '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';
+  const REPO_OWNER = 'SIRXIII';
+  const REPO_NAME = 'CheckVerify';
+
+  const addLog = (message, type = 'info') => {
+    setLogs(prev => [...prev, { message, type, time: new Date().toLocaleTimeString() }]);
+  };
+
+  const revertToOriginal = async () => {
+    setLoading(true);
+    setLogs([]);
+    
+    try {
+      addLog('Fetching commit history...', 'info');
+      
+      // Get commits
+      const commitsRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits?path=index.html&per_page=5`, {
+        headers: {
+          'Authorization': `token ${TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
-        .header {
-            background: white;
-            padding: 15px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+      });
+
+      if (!commitsRes.ok) {
+        throw new Error('Failed to fetch commits');
+      }
+
+      const commits = await commitsRes.json();
+      addLog(`Found ${commits.length} recent commits`, 'success');
+
+      // Find the commit before the recent changes
+      let previousCommit = null;
+      for (let i = 0; i < commits.length; i++) {
+        const commit = commits[i];
+        if (!commit.commit.message.includes('Fix:') && 
+            !commit.commit.message.includes('responsive') &&
+            commit.commit.message !== 'Update index.html') {
+          previousCommit = commit;
+          break;
         }
-        .logo { font-size: 24px; font-weight: bold; color: #1e3a8a; }
-        .admin-btn {
-            background: #fbbf24;
-            color: #1e3a8a;
-            padding: 10px 24px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
+        if (i === commits.length - 1 && !previousCommit) {
+          previousCommit = commits[commits.length - 2] || commits[commits.length - 1];
         }
-        .hero {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 80vh;
-            padding: 40px 20px;
-            text-align: center;
-            color: white;
+      }
+
+      if (!previousCommit) {
+        throw new Error('Could not find previous version');
+      }
+
+      addLog(`Found previous version: ${previousCommit.commit.message.substring(0, 50)}`, 'success');
+
+      // Get the file content from that commit
+      const fileRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/index.html?ref=${previousCommit.sha}`, {
+        headers: {
+          'Authorization': `token ${TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
-        h1 { font-size: 48px; margin-bottom: 20px; }
-        p { font-size: 20px; margin-bottom: 30px; }
-        .btn {
-            background: white;
-            color: #1e3a8a;
-            padding: 15px 40px;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 600;
-            display: inline-block;
+      });
+
+      if (!fileRes.ok) {
+        throw new Error('Failed to fetch previous file version');
+      }
+
+      const previousFile = await fileRes.json();
+      const previousContent = atob(previousFile.content);
+      
+      addLog('Retrieved previous version content', 'success');
+
+      // Get current file SHA
+      const currentFileRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/index.html`, {
+        headers: {
+          'Authorization': `token ${TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="logo">Check IN Verify</div>
-        <a href="admin.html" class="admin-btn">Admin Login</a>
-    </div>
-    <div class="hero">
-        <div>
-            <h1>Secure Hotel Check-in Verification</h1>
-            <p>Upload your documents safely before arrival</p>
-            <a href="#" class="btn">Start Verification</a>
+      });
+
+      const currentFile = await currentFileRes.json();
+
+      // Restore previous version
+      addLog('Restoring previous version...', 'info');
+      
+      const restoreRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/index.html`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'Revert: Restore previous working version',
+          content: btoa(unescape(encodeURIComponent(previousContent))),
+          sha: currentFile.sha,
+          branch: 'main'
+        })
+      });
+
+      if (!restoreRes.ok) {
+        const error = await restoreRes.json();
+        throw new Error(`Failed to restore: ${error.message}`);
+      }
+
+      addLog('Successfully reverted to previous version!', 'success');
+      addLog('Netlify will deploy in 1-2 minutes', 'info');
+      setStatus('Reverted successfully! The original version is being deployed.');
+
+    } catch (error) {
+      addLog(`Error: ${error.message}`, 'error');
+      setStatus(`Failed to revert: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ background: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <RotateCcw size={48} color="#ef4444" style={{ marginBottom: '15px' }} />
+          <h1 style={{ color: '#1e3a8a', marginBottom: '10px' }}>Revert to Previous Version</h1>
+          <p style={{ color: '#64748b' }}>This will restore the working version before my changes</p>
         </div>
+
+        <button
+          onClick={revertToOriginal}
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: '15px',
+            background: loading ? '#94a3b8' : '#ef4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: '600',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            marginBottom: '20px'
+          }}
+        >
+          {loading ? 'Reverting...' : 'Revert to Previous Version'}
+        </button>
+
+        {status && (
+          <div style={{
+            padding: '15px',
+            borderRadius: '8px',
+            background: status.includes('success') ? '#d1fae5' : '#fee2e2',
+            color: status.includes('success') ? '#065f46' : '#991b1b',
+            marginBottom: '20px'
+          }}>
+            {status}
+          </div>
+        )}
+
+        {logs.length > 0 && (
+          <div style={{ 
+            background: '#f8fafc', 
+            borderRadius: '8px', 
+            padding: '15px',
+            maxHeight: '300px',
+            overflowY: 'auto'
+          }}>
+            <h3 style={{ color: '#475569', fontSize: '14px', marginBottom: '10px' }}>Process Log:</h3>
+            {logs.map((log, index) => (
+              <div key={index} style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start', 
+                gap: '10px', 
+                padding: '8px',
+                borderBottom: index < logs.length - 1 ? '1px solid #e2e8f0' : 'none',
+                fontSize: '13px'
+              }}>
+                {log.type === 'success' && <CheckCircle size={16} color="#10b981" />}
+                {log.type === 'error' && <AlertCircle size={16} color="#ef4444" />}
+                {log.type === 'info' && <AlertCircle size={16} color="#3b82f6" />}
+                <span style={{ color: '#64748b', fontSize: '11px' }}>{log.time}</span>
+                <span style={{ color: '#1e293b', flex: 1 }}>{log.message}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ 
+          marginTop: '20px', 
+          padding: '15px', 
+          background: '#fef3c7',
+          borderRadius: '8px',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+          <p style={{ color: '#78350f', fontSize: '14px', margin: 0 }}>
+            <strong>Important:</strong> This will restore your site to its previous working state. After reverting, wait 1-2 minutes for Netlify to deploy the changes.
+          </p>
+        </div>
+      </div>
     </div>
-</body>
-</html>
+  );
+}
