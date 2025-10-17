@@ -11,7 +11,6 @@ export default function Header() {
       await signOut();
       navigate('/');
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Error signing out', err);
     }
   };

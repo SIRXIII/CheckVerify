@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Download, Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,8 +9,25 @@ import { useAuth } from '../contexts/AuthContext';
  * deprecated app_metadata.role, and uses a secure server function to fetch
  * submission data. Unauthorized users see a clear message rather than a blank screen.
  */
+type Submission = {
+  id: string;
+  reservation_id: string;
+  guest_name: string;
+  email: string;
+  check_in_date: string;
+  check_out_date: string;
+  booking_platform: string;
+  reservation_amount: number;
+  status: string;
+  created_at: string;
+};
+
+type SubmissionResponse = {
+  items?: Submission[];
+};
+
 export function AdminSubmissions() {
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, userType, loading: authLoading } = useAuth();
 
@@ -26,14 +42,14 @@ export function AdminSubmissions() {
         throw new Error('Missing access token');
       }
       const params = new URLSearchParams({ page: '1', pageSize: '50', q: '', status: 'all', date: '' });
-      const res = await fetch(`/api/admin/submissions?${params.toString()}`, {
+      const res = await fetch(`/api/admin-get-submissions?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
         throw new Error(`Failed to fetch submissions. Status ${res.status}`);
       }
-      const result = await res.json();
-      setSubmissions(result.items);
+      const result: SubmissionResponse = await res.json();
+      setSubmissions(result.items ?? []);
     } catch (error) {
       console.error('Error fetching submissions:', error);
     } finally {
@@ -48,7 +64,6 @@ export function AdminSubmissions() {
     } else {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userType, authLoading]);
 
   if (authLoading || loading) {

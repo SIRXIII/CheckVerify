@@ -5,7 +5,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 
 // When env vars are not provided, export a safe fallback client that allows the UI to render
 // and surfaces clear errors only when privileged actions are attempted.
-function createFallbackClient(): SupabaseClient<any, any, any> {
+function createFallbackClient(): SupabaseClient {
   const notConfigured = () => {
     throw new Error(
       'Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.'
@@ -13,12 +13,14 @@ function createFallbackClient(): SupabaseClient<any, any, any> {
   };
 
   // Minimal surface used across the app
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fallback: any = {
+  const fallback: Record<string, unknown> = {
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),
       // onAuthStateChange returns an object with a subscription that has an unsubscribe()
-      onAuthStateChange: (_cb: unknown) => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      onAuthStateChange: (callback: unknown) => {
+        void callback;
+        return { data: { subscription: { unsubscribe: () => {} } } };
+      },
       signInWithPassword: async () => notConfigured(),
       signUp: async () => notConfigured(),
       signOut: async () => ({ error: null }),
@@ -37,10 +39,10 @@ function createFallbackClient(): SupabaseClient<any, any, any> {
     },
   };
 
-  return fallback as SupabaseClient<any, any, any>;
+  return fallback as SupabaseClient;
 }
 
-export const supabase: SupabaseClient<any, any, any> =
+export const supabase: SupabaseClient =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
     : createFallbackClient();

@@ -10,8 +10,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, info: any) {
-    // eslint-disable-next-line no-console
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('Admin error boundary:', error, info);
   }
 
