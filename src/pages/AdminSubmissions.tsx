@@ -29,6 +29,7 @@ type SubmissionResponse = {
 export function AdminSubmissions() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user, userType, loading: authLoading } = useAuth();
 
   /**
@@ -36,22 +37,33 @@ export function AdminSubmissions() {
    */
   const fetchSubmissions = async () => {
     try {
+      setError(null);
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
-        throw new Error('Missing access token');
+        throw new Error('Missing access token. Please sign in again.');
       }
       const params = new URLSearchParams({ page: '1', pageSize: '50', q: '', status: 'all', date: '' });
       const res = await fetch(`/api/admin-get-submissions?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        throw new Error(`Failed to fetch submissions. Status ${res.status}`);
+        if (res.status === 401) {
+          throw new Error('Your session has expired. Please sign in again.');
+        }
+        if (res.status === 403) {
+          throw new Error('You do not have permission to view submissions.');
+        }
+        const payload = await res.json().catch(() => null);
+        const message = typeof payload?.error === 'string' ? payload.error : `Status ${res.status}`;
+        throw new Error(`Failed to fetch submissions: ${message}`);
       }
       const result: SubmissionResponse = await res.json();
       setSubmissions(result.items ?? []);
     } catch (error) {
       console.error('Error fetching submissions:', error);
+      setSubmissions([]);
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -76,6 +88,9 @@ export function AdminSubmissions() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-semibold mb-4">Verification Submissions</h1>
+      {error ? (
+        <div className="mb-4 rounded border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
+      ) : null}
       {submissions.length === 0 ? (
         <div>No submissions found.</div>
       ) : (

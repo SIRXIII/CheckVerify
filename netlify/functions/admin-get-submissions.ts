@@ -5,19 +5,21 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 
 export const handler: Handler = async (event) => {
+  if (!supabaseUrl || !serviceKey) {
+    console.error('Missing Supabase environment variables for admin-get-submissions');
+    return json(500, { error: 'Server configuration error' });
+  }
   try {
     const auth = event.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
     if (!token) return json(401, { error: 'Unauthorized' });
 
-    const supabase = createClient(supabaseUrl, serviceKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-    const { data: userRes, error: uerr } = await supabase.auth.getUser(token);
+    const { data: userRes, error: uerr } = await supabaseAdmin.auth.getUser(token);
     if (uerr || !userRes?.user) return json(401, { error: 'Unauthorized' });
 
-    const { data: profile, error: perr } = await supabase
+    const { data: profile, error: perr } = await supabaseAdmin
       .from('user_profiles')
       .select('user_type')
       .eq('id', userRes.user.id)
@@ -32,7 +34,7 @@ export const handler: Handler = async (event) => {
     const q = event.queryStringParameters?.q || '';
     const date = event.queryStringParameters?.date || '';
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('reservations')
       .select(
         `*,
