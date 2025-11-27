@@ -20,11 +20,11 @@ export function ProtectedRoute({ children, userType }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin/login" replace state={{ error: 'Please log in to access the dashboard.' }} />;
   }
 
   if (userType && currentUserType !== userType) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin/login" replace state={{ error: 'Access denied. You must be an admin to view this page.' }} />;
   }
 
   return <>{children}</>;

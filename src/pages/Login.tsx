@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,8 +12,23 @@ export function Login() {
   const [error, setError] = useState('');
   const [inviteCode, setInviteCode] = useState('');
 
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, userType } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (user && userType === 'admin') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, userType, navigate]);
+
+  React.useEffect(() => {
+    if (location.state?.error) {
+      setError(location.state.error || '');
+      // Clear state so error doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const ADMIN_INVITE_CODE = import.meta.env.VITE_ADMIN_INVITE_CODE;
 
@@ -61,9 +76,9 @@ export function Login() {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Centered Logo */}
           <div className="text-center mb-8">
-            <img 
-              src="/Check-In Verify LOGO.png" 
-              alt="Check-In Verify Logo" 
+            <img
+              src="/Check-In Verify LOGO.png"
+              alt="Check-In Verify Logo"
               className="h-20 w-auto mx-auto mb-6 drop-shadow-lg"
             />
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">

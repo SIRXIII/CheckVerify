@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .limit(1);
 
       if (error) throw error;
-      
+
       if (data && data.length > 0) {
         setUserType(data[0].user_type);
       } else {
@@ -72,6 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error fetching user type:', error);
       setUserType(null);
+      // If we can't fetch the profile, we should probably sign out or clear the user to avoid mixed state
+      // But for now, just clearing userType is safer to avoid loops
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data.user) {
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .insert([
+        .upsert([
           {
             id: data.user.id,
             email: data.user.email,
