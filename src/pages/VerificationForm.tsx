@@ -44,6 +44,13 @@ export function VerificationForm() {
 
   useEffect(() => {
     initializeSignaturePad();
+    
+    // Cleanup on unmount
+    return () => {
+      if (signaturePadRef.current) {
+        signaturePadRef.current.off();
+      }
+    };
   }, []);
 
   const initializeSignaturePad = () => {
@@ -52,6 +59,13 @@ export function VerificationForm() {
         backgroundColor: 'rgb(255, 255, 255)',
         penColor: 'rgb(0, 0, 0)',
       });
+      
+      // Ensure canvas is sized correctly for signature pad
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      canvasRef.current.width = canvasRef.current.offsetWidth * ratio;
+      canvasRef.current.height = canvasRef.current.offsetHeight * ratio;
+      canvasRef.current.getContext("2d")?.scale(ratio, ratio);
+      signaturePadRef.current.clear();
     }
   };
 
@@ -111,15 +125,6 @@ export function VerificationForm() {
       throw new Error(`Failed to upload ${folder}: ${uploadError.message}`);
     }
 
-    // Generate a short-lived signed URL (not stored) to ensure the file is accessible
-    const { error: signedUrlError } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(filePath, 60);
-    if (signedUrlError) {
-      throw new Error(`Failed to create signed URL for ${folder}: ${signedUrlError.message}`);
-    }
-
-    // Return the file path for later retrieval with signed URLs
     return filePath;
   };
 
@@ -133,22 +138,32 @@ export function VerificationForm() {
     if (!formData.firstName.trim()) return 'First name is required';
     if (!formData.lastName.trim()) return 'Last name is required';
     if (!formData.email.trim()) return 'Email is required';
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) return 'Please enter a valid email address';
+    
     if (!formData.checkInDate) return 'Check-in date is required';
     if (!formData.checkOutDate) return 'Check-out date is required';
     if (!formData.reservationAmount.trim()) return 'Reservation amount is required';
+    
     if (isNaN(Number(formData.reservationAmount))) return 'Reservation amount must be a number';
     if (Number(formData.reservationAmount) <= 0) return 'Reservation amount must be positive';
-    if (!idDocument) return 'Cardholder\'s/Booker\'s ID is required';
+    
+    if (!idDocument) return "Cardholder's/Booker's ID is required";
     if (!creditCard) return 'Credit card image is required';
     if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) return 'Digital signature is required';
     if (!agreed) return 'You must agree to the payment processing consent';
+    
     return null;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -172,6 +187,7 @@ export function VerificationForm() {
           {
             confirmation_number: confirmationNumber,
             guest_name: `${formData.firstName} ${formData.lastName}`,
+            guest_email: formData.email.trim(),
             check_in_date: formData.checkInDate,
             check_out_date: formData.checkOutDate,
             total_amount: parseFloat(formData.reservationAmount),
@@ -218,13 +234,11 @@ export function VerificationForm() {
 
       setSuccess(true);
       setShowSuccess(true);
-    } catch (error: unknown) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error: any) {
       console.error('Submission error:', error);
-      if (error instanceof Error) {
-        setError(error.message || 'An error occurred during submission');
-      } else {
-        setError('An error occurred during submission');
-      }
+      setError(error.message || 'An error occurred during submission');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -242,7 +256,7 @@ export function VerificationForm() {
     accept: string;
     title: string;
     description: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: any;
     uploadedFile: UploadedFile | null;
   }) => (
     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition-colors">
@@ -285,7 +299,6 @@ export function VerificationForm() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
         <div className="max-w-2xl w-full">
-          {/* Centered Logo */}
           <div className="text-center mb-12">
             <img 
               src="/Check-In Verify LOGO.png" 
@@ -318,7 +331,6 @@ export function VerificationForm() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Centered Logo */}
         <div className="text-center mb-12">
           <img 
             src="/Check-In Verify LOGO.png" 
@@ -332,16 +344,6 @@ export function VerificationForm() {
           <p className="text-xl text-gray-600">Complete your verification to streamline your check-in process</p>
         </div>
 
-        {/* Success Banner */}
-        {showSuccess && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-xl mb-8 shadow-sm">
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="h-6 w-6" />
-              <span className="text-lg font-medium">✅ Check-in complete. Thank you!</span>
-            </div>
-          </div>
-        )}
-
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl mb-8 shadow-sm">
             <div className="flex items-center space-x-3">
@@ -352,293 +354,278 @@ export function VerificationForm() {
         )}
 
         <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-12">
-          {/* Guest Information */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <User className="h-6 w-6 text-blue-600" />
-              </div>
-              <span>Guest Information</span>
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your first name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your last name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your email address"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Booking Platform *
-                </label>
-                <select
-                  name="bookingPlatform"
-                  value={formData.bookingPlatform}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="Booking.com">Booking.com</option>
-                  <option value="Expedia">Expedia</option>
-                  <option value="Hotels.com">Hotels.com</option>
-                  <option value="Airbnb">Airbnb</option>
-                  <option value="Direct">Direct Booking</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Check-in Date *
-                </label>
-                <input
-                  type="date"
-                  name="checkInDate"
-                  value={formData.checkInDate}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Check-out Date *
-                </label>
-                <input
-                  type="date"
-                  name="checkOutDate"
-                  value={formData.checkOutDate}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Document Upload */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
-              <div className="bg-green-100 p-2 rounded-lg">
-                <Upload className="h-6 w-6 text-green-600" />
-              </div>
-              <span>Document Upload</span>
-            </h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              <FileUploadArea
-                onFileSelect={(file) => handleFileUpload(file, 'id')}
-                accept="image/*,.pdf"
-                title="Cardholder's/Booker's ID"
-                description="Upload your driver's license or passport (upload both, if different)"
-                icon={User}
-                uploadedFile={idDocument}
-              />
+          <form onSubmit={handleSubmit}>
+            {/* Guest Information */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <User className="h-6 w-6 text-blue-600" />
+                </div>
+                <span>Guest Information</span>
+              </h2>
               
-              <FileUploadArea
-                onFileSelect={(file) => handleFileUpload(file, 'credit_card')}
-                accept="image/*,.pdf"
-                title="Credit Card"
-                description="The credit card must match the card submitted on the booking website"
-                icon={CreditCard}
-                uploadedFile={creditCard}
-              />
-            </div>
-          </div>
-
-          {/* Payment Information */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
-              <div className="bg-yellow-100 p-2 rounded-lg">
-                <DollarSign className="h-6 w-6 text-yellow-600" />
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    required
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your first name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    required
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your last name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your email address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Booking Platform *
+                  </label>
+                  <select
+                    name="bookingPlatform"
+                    required
+                    value={formData.bookingPlatform}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="Booking.com">Booking.com</option>
+                    <option value="Expedia">Expedia</option>
+                    <option value="Hotels.com">Hotels.com</option>
+                    <option value="Airbnb">Airbnb</option>
+                    <option value="Direct">Direct Booking</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Check-in Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="checkInDate"
+                    required
+                    value={formData.checkInDate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Check-out Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="checkOutDate"
+                    required
+                    value={formData.checkOutDate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
               </div>
-              <span>Payment Information</span>
-            </h2>
-            <div className="max-w-md">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Reservation Amount *
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
-                <input
-                  type="number"
-                  name="reservationAmount"
-                  value={formData.reservationAmount}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
-                  placeholder="0.00"
+            </div>
+
+            {/* Document Upload */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <Upload className="h-6 w-6 text-green-600" />
+                </div>
+                <span>Document Upload</span>
+              </h2>
+              <div className="grid md:grid-cols-2 gap-8">
+                <FileUploadArea
+                  onFileSelect={(file) => handleFileUpload(file, 'id')}
+                  accept="image/*,.pdf"
+                  title="Cardholder's/Booker's ID"
+                  description="Upload your driver's license or passport (upload both, if different)"
+                  icon={User}
+                  uploadedFile={idDocument}
+                />
+                
+                <FileUploadArea
+                  onFileSelect={(file) => handleFileUpload(file, 'credit_card')}
+                  accept="image/*,.pdf"
+                  title="Credit Card"
+                  description="The credit card must match the card submitted on the booking website"
+                  icon={CreditCard}
+                  uploadedFile={creditCard}
                 />
               </div>
             </div>
-          </div>
 
-          {/* Digital Signature */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <FileText className="h-6 w-6 text-purple-600" />
-              </div>
-              <span>Digital Signature</span>
-            </h2>
-            
-            <div className="bg-gray-50 rounded-xl p-8 mb-8">
-              <div className="space-y-6 text-sm text-gray-700">
-                <p className="text-base font-medium text-gray-900">
-                  I hereby authorize the charges already made by <strong>HOST LA PR</strong> for my reservation (via Booking / Expedia).
-                </p>
-                
-                <p className="font-medium">I understand and agree to the policies stipulated on the website upon booking – they are as follows:</p>
-                
-                <div className="space-y-4 ml-4">
-                  <div className="flex items-start space-x-3">
-                    <span className="font-semibold text-gray-900 min-w-[20px]">1.</span>
-                    <span>The <u>total rental amount</u> includes all applicable taxes and fees.</span>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <span className="font-semibold text-gray-900 min-w-[20px]">2.</span>
-                    <span>Any additional charges incurred during the rental period (e.g., damages, extra services) will be charged to the above credit card.</span>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <span className="font-semibold text-gray-900 min-w-[20px]">3.</span>
-                    <span>Cancellations made within 30 days from the check-in date are NON-refundable.</span>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <span className="font-semibold text-gray-900 min-w-[20px]">4.</span>
-                    <span>NO-SHOWS are also NON-refundable. Date changes will be handled on a case by case basis at the discretion of management, depending on availability.</span>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <span className="font-semibold text-gray-900 min-w-[20px]">5.</span>
-                    <span>I am responsible for any damages to the property during the rental period and authorize the above credit card to be charged for any necessary repairs or replacements.</span>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <span className="font-semibold text-gray-900 min-w-[20px]">6.</span>
-                    <span>Eligible refunds will be made to the original form of payment, absolutely no exceptions.</span>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <span className="font-semibold text-gray-900 min-w-[20px]">7.</span>
-                    <span><strong>IMPORTANT: Signature on this form must match the signature of the cardholder's ID.</strong></span>
-                  </div>
+            {/* Payment Information */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
+                <div className="bg-yellow-100 p-2 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-yellow-600" />
                 </div>
+                <span>Payment Information</span>
+              </h2>
+              <div className="max-w-md">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Reservation Amount *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                  <input
+                    type="number"
+                    name="reservationAmount"
+                    required
+                    value={formData.reservationAmount}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-300">
-                  <p className="font-semibold text-gray-900 mb-4">Please Sign and Date</p>
-                  <p className="mb-4">
-                    <strong>Return the completed and signed form to the following:</strong><br />
-                    HOST L.A.<br />
-                    Business: 323-673-4171 / 424-666-8823<br />
-                    Email: hostla2@icloud.com<br />
-                    Los Angeles, CA
+            {/* Digital Signature */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-8 flex items-center space-x-3">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <FileText className="h-6 w-6 text-purple-600" />
+                </div>
+                <span>Digital Signature</span>
+              </h2>
+              
+              <div className="bg-gray-50 rounded-xl p-8 mb-8">
+                <div className="space-y-6 text-sm text-gray-700">
+                  <p className="text-base font-medium text-gray-900">
+                    I hereby authorize the charges already made by <strong>HOST LA PR</strong> for my reservation (via Booking / Expedia).
                   </p>
+                  
+                  <p className="font-medium">I understand and agree to the policies stipulated on the website upon booking – they are as follows:</p>
+                  
+                  <div className="space-y-4 ml-4">
+                    <div className="flex items-start space-x-3">
+                      <span className="font-semibold text-gray-900 min-w-[20px]">1.</span>
+                      <span>The <u>total rental amount</u> includes all applicable taxes and fees.</span>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3">
+                      <span className="font-semibold text-gray-900 min-w-[20px]">2.</span>
+                      <span>Any additional charges incurred during the rental period (e.g., damages, extra services) will be charged to the above credit card.</span>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3">
+                      <span className="font-semibold text-gray-900 min-w-[20px]">3.</span>
+                      <span>Cancellations made within 30 days from the check-in date are NON-refundable.</span>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3">
+                      <span className="font-semibold text-gray-900 min-w-[20px]">4.</span>
+                      <span>NO-SHOWS are also NON-refundable. Date changes will be handled on a case by case basis at the discretion of management, depending on availability.</span>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3">
+                      <span className="font-semibold text-gray-900 min-w-[20px]">5.</span>
+                      <span>I am responsible for any damages to the property during the rental period and authorize the above credit card to be charged for any necessary repairs or replacements.</span>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3">
+                      <span className="font-semibold text-gray-900 min-w-[20px]">6.</span>
+                      <span>Eligible refunds will be made to the original form of payment, absolutely no exceptions.</span>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3">
+                      <span className="font-semibold text-gray-900 min-w-[20px]">7.</span>
+                      <span><strong>IMPORTANT: Signature on this form must match the signature of the cardholder's ID.</strong></span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="border-2 border-gray-300 rounded-xl p-6 bg-white">
-              <canvas
-                ref={canvasRef}
-                width={600}
-                height={200}
-                className="w-full h-40 border border-gray-200 rounded-lg"
-              />
-              <div className="flex justify-between items-center mt-4">
-                <p className="text-sm text-gray-500">Sign above to consent</p>
-                <button
-                  onClick={clearSignature}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
-                >
-                  Clear Signature
-                </button>
+              <div className="border-2 border-gray-300 rounded-xl p-6 bg-white">
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-40 border border-gray-200 rounded-lg cursor-crosshair touch-none"
+                />
+                <div className="flex justify-between items-center mt-4">
+                  <p className="text-sm text-gray-500">Sign above to consent</p>
+                  <button
+                    type="button"
+                    onClick={clearSignature}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Clear Signature
+                  </button>
+                </div>
+                <small className="block mt-2 text-gray-500 text-xs">Digital signature required</small>
               </div>
-              <small className="block mt-2 text-gray-500 text-xs">Digital signature required</small>
             </div>
-          </div>
 
-          {/* Consent Checkbox */}
-          <div className="mb-12">
-            <label className="flex items-start space-x-4 p-6 bg-blue-50 rounded-xl border border-blue-200">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700 leading-relaxed">
-                I hereby consent to Host LA processing my payment and confirm that all information provided is accurate. 
-                I understand that this digital signature has the same legal effect as a handwritten signature and matches my cardholder's ID.
-              </span>
-            </label>
-          </div>
+            {/* Consent Checkbox */}
+            <div className="mb-12">
+              <label className="flex items-start space-x-4 p-6 bg-blue-50 rounded-xl border border-blue-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  required
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 leading-relaxed">
+                  I hereby consent to Host LA processing my payment and confirm that all information provided is accurate. 
+                  I understand that this digital signature has the same legal effect as a handwritten signature and matches my cardholder's ID.
+                </span>
+              </label>
+            </div>
 
-          {/* Submit Button */}
-          <div className="flex flex-col items-center">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-12 py-4 rounded-xl font-semibold text-lg transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              {loading ? 'Submitting...' : 'Submit Verification'}
-            </button>
-            
-            {/* Privacy & Terms Links */}
-            <p className="text-xs text-gray-500 mt-4 text-center">
-              <a href="/privacy.html" target="_blank" className="text-blue-600 hover:text-blue-700 transition-colors">Privacy Policy</a>
-              <span className="mx-2">·</span>
-              <a href="/terms.html" target="_blank" className="text-blue-600 hover:text-blue-700 transition-colors">Terms of Service</a>
-            </p>
-              {/* Security badge line */}
-  <p
-    style={{ fontSize: '12px', color: '#555', marginTop: '6px' }}
-    className="text-center"
-  >
-    🔒 Your ID and card images are encrypted in transit and stored securely.{' '}
-    <a
-      href="/privacy.html"
-      target="_blank"
-      style={{ textDecoration: 'underline' }}
-      className="text-blue-600 hover:text-blue-700"
-    >
-      Learn more
-    </a>
-    .
-  </p>
-
-          </div>
+            {/* Submit Button */}
+            <div className="flex flex-col items-center">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-12 py-4 rounded-xl font-semibold text-lg transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                {loading ? 'Submitting...' : 'Submit Verification'}
+              </button>
+              
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                <a href="/privacy.html" target="_blank" className="text-blue-600 hover:text-blue-700 transition-colors">Privacy Policy</a>
+                <span className="mx-2">·</span>
+                <a href="/terms.html" target="_blank" className="text-blue-600 hover:text-blue-700 transition-colors">Terms of Service</a>
+              </p>
+              
+              <p className="text-center text-xs text-gray-500 mt-2">
+                🔒 Your ID and card images are encrypted in transit and stored securely. <a href="/privacy.html" target="_blank" className="underline text-blue-600">Learn more</a>.
+              </p>
+            </div>
+          </form>
         </div>
       </div>
     </div>
