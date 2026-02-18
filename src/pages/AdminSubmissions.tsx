@@ -118,7 +118,11 @@ export function AdminSubmissions() {
     try {
       const { error } = await supabase
         .from('verification_documents')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ 
+          status, 
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id 
+        })
         .eq('reservation_id', selectedSubmission.reservation_id);
 
       if (error) throw error;
