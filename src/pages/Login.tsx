@@ -71,17 +71,17 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-hostla-dark flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Centered Logo */}
           <div className="text-center mb-8">
             <img
-              src="/Check-In Verify LOGO.png"
-              alt="Check-In Verify Logo"
+              src="/check-in-verify-logo.png"
+              alt="Host LA Logo"
               className="h-20 w-auto mx-auto mb-6 drop-shadow-lg"
             />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-2xl font-heading font-semibold text-gray-900 mb-2">
               Admin Access
             </h2>
             <p className="text-gray-600">
@@ -106,7 +106,7 @@ export function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
                 placeholder="Enter your email"
               />
             </div>
@@ -122,7 +122,7 @@ export function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
                   placeholder="Enter your password"
                 />
                 <button
@@ -146,7 +146,7 @@ export function Login() {
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
                   placeholder="Enter invite code"
                 />
               </div>
@@ -155,16 +155,25 @@ export function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              className="w-full bg-hostla-primary hover:bg-hostla-secondary text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={() => navigate('/reset-password')}
+                className="block w-full text-sm text-gray-500 hover:text-hostla-primary transition-colors"
+              >
+                Forgot your password?
+              </button>
+            )}
             <button
               onClick={handleToggle}
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              className="text-hostla-primary hover:text-hostla-secondary font-medium transition-colors"
             >
               {isSignUp ? 'Back to sign in' : 'Have an admin invite? Sign up'}
             </button>

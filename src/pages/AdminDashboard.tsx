@@ -48,7 +48,7 @@ export function AdminDashboard() {
       if (error) throw error;
 
       const today = new Date().toDateString();
-      
+
       // Filter only reservations that have verification documents
       const submissionsWithVerification = (reservationsData || [])
         .filter(reservation => reservation.verification_documents && reservation.verification_documents.length > 0)
@@ -62,12 +62,12 @@ export function AdminDashboard() {
       const dashboardStats: DashboardStats = {
         totalSubmissions: submissionsWithVerification.length,
         pendingReview: submissionsWithVerification.filter(s => s.status === 'pending').length,
-        verifiedToday: submissionsWithVerification.filter(s => 
-          s.status === 'verified' && 
+        verifiedToday: submissionsWithVerification.filter(s =>
+          s.status === 'verified' &&
           new Date(s.created_at).toDateString() === today
         ).length,
-        rejectedToday: submissionsWithVerification.filter(s => 
-          s.status === 'rejected' && 
+        rejectedToday: submissionsWithVerification.filter(s =>
+          s.status === 'rejected' &&
           new Date(s.created_at).toDateString() === today
         ).length,
         recentSubmissions: submissionsWithVerification.slice(0, 5),
@@ -94,7 +94,7 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
@@ -113,20 +113,20 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Centered Logo */}
         <div className="text-center mb-12">
-          <img 
-            src="/Check-In Verify LOGO.png" 
-            alt="Check-In Verify Logo" 
+          <img
+            src="/check-in-verify-logo.png"
+            alt="Host LA Logo"
             className="h-20 w-auto mx-auto drop-shadow-lg"
           />
         </div>
 
         <div className="mb-12">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+            <h1 className="text-4xl font-heading font-bold text-gray-900 mb-4">Admin Dashboard</h1>
             <p className="text-xl text-gray-600">Overview of verification submissions and system activity</p>
           </div>
         </div>
@@ -140,8 +140,8 @@ export function AdminDashboard() {
                 <p className="text-3xl font-bold text-gray-900">{stats.totalSubmissions}</p>
                 <p className="text-xs text-gray-400 mt-1">All time</p>
               </div>
-              <div className="bg-blue-100 p-3 rounded-xl">
-                <Users className="h-8 w-8 text-blue-600" />
+              <div className="bg-hostla-light p-3 rounded-xl">
+                <Users className="h-8 w-8 text-hostla-primary" />
               </div>
             </div>
           </div>
@@ -190,20 +190,20 @@ export function AdminDashboard() {
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Link
             to="/admin/submissions"
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-8 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl group transform hover:-translate-y-1"
+            className="bg-gradient-to-r from-hostla-primary to-hostla-secondary hover:from-hostla-secondary hover:to-hostla-primary text-white p-8 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl group transform hover:-translate-y-1"
           >
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-2xl font-semibold mb-3">Review Submissions</h3>
-                <p className="text-blue-100 mb-6 text-lg">
+                <p className="text-pink-100 mb-6 text-lg">
                   View and manage all guest verification submissions
                 </p>
-                <div className="flex items-center space-x-2 text-blue-200">
+                <div className="flex items-center space-x-2 text-pink-200">
                   <span className="text-sm">View all submissions</span>
                   <Eye className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
-              <div className="bg-blue-500 bg-opacity-50 p-4 rounded-xl">
+              <div className="bg-white bg-opacity-20 p-4 rounded-xl">
                 <FileText className="h-12 w-12 text-white" />
               </div>
             </div>
@@ -235,9 +235,9 @@ export function AdminDashboard() {
               <h2 className="text-2xl font-semibold text-gray-900">Recent Submissions</h2>
               <Link
                 to="/admin/submissions"
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+                className="text-hostla-primary hover:text-hostla-secondary font-medium text-sm px-4 py-2 rounded-lg hover:bg-hostla-light transition-colors"
               >
-                View all →
+                View all &rarr;
               </Link>
             </div>
           </div>
@@ -254,8 +254,8 @@ export function AdminDashboard() {
                 <div key={submission.id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="bg-blue-100 p-3 rounded-xl">
-                        <Users className="h-6 w-6 text-blue-600" />
+                      <div className="bg-hostla-light p-3 rounded-xl">
+                        <Users className="h-6 w-6 text-hostla-primary" />
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-900 text-lg">{submission.guest_name}</h3>
@@ -270,7 +270,7 @@ export function AdminDashboard() {
                       </span>
                       <Link
                         to="/admin/submissions"
-                        className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                        className="text-hostla-primary hover:text-hostla-secondary p-2 rounded-lg hover:bg-hostla-light transition-colors"
                       >
                         <Eye className="h-5 w-5" />
                       </Link>

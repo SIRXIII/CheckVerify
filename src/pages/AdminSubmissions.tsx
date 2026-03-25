@@ -113,25 +113,25 @@ export function AdminSubmissions() {
 
   const handleUpdateStatus = async (status: 'approved' | 'rejected') => {
     if (!selectedSubmission || isUpdating) return;
-    
+
     setIsUpdating(true);
     try {
       const { error } = await supabase
         .from('verification_documents')
-        .update({ 
-          status, 
+        .update({
+          status,
           reviewed_at: new Date().toISOString(),
-          reviewed_by: user?.id 
+          reviewed_by: user?.id
         })
         .eq('reservation_id', selectedSubmission.reservation_id);
 
       if (error) throw error;
 
       // Update local state
-      setSubmissions(prev => prev.map(s => 
+      setSubmissions(prev => prev.map(s =>
         s.reservation_id === selectedSubmission.reservation_id ? { ...s, status } : s
       ));
-      
+
       setSelectedSubmission(prev => prev ? { ...prev, status } : null);
     } catch (err: any) {
       console.error('Error updating status:', err);
@@ -160,7 +160,7 @@ export function AdminSubmissions() {
       {error && (
         <div className="mb-4 rounded border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
       )}
-      
+
       <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full text-left text-sm text-gray-500">
           <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-700">
@@ -190,7 +190,7 @@ export function AdminSubmissions() {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <button onClick={() => handleViewDetails(item)} className="text-blue-600 hover:text-blue-900">
+                  <button onClick={() => handleViewDetails(item)} className="text-hostla-primary hover:text-hostla-secondary">
                     View Details
                   </button>
                 </td>
@@ -205,7 +205,7 @@ export function AdminSubmissions() {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Submission Details</h2>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-xl">×</button>
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -250,14 +250,14 @@ export function AdminSubmissions() {
               </button>
               {selectedSubmission.status === 'pending' && (
                 <>
-                  <button 
+                  <button
                     onClick={() => handleUpdateStatus('rejected')}
                     disabled={isUpdating}
                     className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
                   >
                     Reject
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleUpdateStatus('approved')}
                     disabled={isUpdating}
                     className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"

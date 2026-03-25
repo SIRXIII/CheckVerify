@@ -35,6 +35,8 @@ function createFallbackClient(): SupabaseClient {
       signInWithPassword: async () => notConfigured(),
       signUp: async () => notConfigured(),
       signOut: async () => ({ error: null }),
+      updateUser: async () => notConfigured(),
+      resetPasswordForEmail: async () => notConfigured(),
     },
     from: () => ({
       select: async () => notConfigured(),
@@ -55,11 +57,5 @@ function createFallbackClient(): SupabaseClient {
 
 export const supabase: SupabaseClient =
   supabaseUrl && supabaseAnonKey
-    ? (() => {
-      console.log('Supabase Config Status: Valid');
-      console.log('Supabase URL:', supabaseUrl);
-      // Log first few chars to verify no quotes/whitespace issues
-      console.log('Supabase Key Start:', supabaseAnonKey.substring(0, 5) + '...');
-      return createClient(supabaseUrl, supabaseAnonKey);
-    })()
+    ? createClient(supabaseUrl, supabaseAnonKey)
     : createFallbackClient();
