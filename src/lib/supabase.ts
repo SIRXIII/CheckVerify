@@ -35,6 +35,8 @@ function createFallbackClient(): SupabaseClient {
       signInWithPassword: async () => notConfigured(),
       signUp: async () => notConfigured(),
       signOut: async () => ({ error: null }),
+      updateUser: async () => notConfigured(),
+      resetPasswordForEmail: async () => notConfigured(),
     },
     from: () => ({
       select: async () => notConfigured(),

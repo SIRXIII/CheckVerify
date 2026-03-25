@@ -161,7 +161,16 @@ export function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={() => navigate('/reset-password')}
+                className="block w-full text-sm text-gray-500 hover:text-hostla-primary transition-colors"
+              >
+                Forgot your password?
+              </button>
+            )}
             <button
               onClick={handleToggle}
               className="text-hostla-primary hover:text-hostla-secondary font-medium transition-colors"
