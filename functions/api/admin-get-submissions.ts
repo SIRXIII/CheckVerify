@@ -1,16 +1,22 @@
-import type { Handler } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+interface Env {
+  SUPABASE_URL: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+}
 
-export const handler: Handler = async (event) => {
+export const onRequest: PagesFunction<Env> = async (context) => {
+  const { request, env } = context;
+
+  const supabaseUrl = env.SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
   if (!supabaseUrl || !serviceKey) {
-    console.error('Missing Supabase environment variables for admin-get-submissions');
     return json(500, { error: 'Server configuration error' });
   }
+
   try {
-    const auth = event.headers.authorization || '';
+    const auth = request.headers.get('authorization') || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
     if (!token) return json(401, { error: 'Unauthorized' });
 
@@ -27,12 +33,12 @@ export const handler: Handler = async (event) => {
 
     if (perr || profile?.user_type !== 'admin') return json(403, { error: 'Forbidden' });
 
-    // Inputs
-    const page = Math.max(1, parseInt(event.queryStringParameters?.page || '1', 10));
-    const pageSize = Math.min(100, parseInt(event.queryStringParameters?.pageSize || '50', 10));
-    const status = (event.queryStringParameters?.status || 'all').toLowerCase();
-    const q = event.queryStringParameters?.q || '';
-    const date = event.queryStringParameters?.date || '';
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+    const pageSize = Math.min(100, parseInt(url.searchParams.get('pageSize') || '50', 10));
+    const status = (url.searchParams.get('status') || 'all').toLowerCase();
+    const q = url.searchParams.get('q') || '';
+    const date = url.searchParams.get('date') || '';
 
     let query = supabaseAdmin
       .from('reservations')
@@ -96,6 +102,9 @@ export const handler: Handler = async (event) => {
   }
 };
 
-function json<T>(status: number, body: T) {
-  return { statusCode: status, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
+function json<T>(status: number, body: T): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 }
