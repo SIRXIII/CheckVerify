@@ -114,10 +114,13 @@ export function VerificationWizard() {
       const signatureDataURL = signaturePadRef.current!.toDataURL();
       const confNum = generateConfirmationNumber();
 
-      const { data: reservationData, error: reservationError } = await supabase
+      const reservationId = crypto.randomUUID();
+
+      const { error: reservationError } = await supabase
         .from('reservations')
         .insert([
           {
+            id: reservationId,
             confirmation_number: confNum,
             guest_name: `${formData.firstName} ${formData.lastName}`,
             guest_email: formData.email.trim(),
@@ -127,9 +130,7 @@ export function VerificationWizard() {
             booking_platform: formData.bookingPlatform,
             status: 'pending',
           },
-        ])
-        .select()
-        .single();
+        ]);
 
       if (reservationError) throw reservationError;
 
@@ -137,7 +138,7 @@ export function VerificationWizard() {
         .from('verification_documents')
         .insert([
           {
-            reservation_id: reservationData.id,
+            reservation_id: reservationId,
             id_document_name: idDocument!.name,
             id_document_path: idDocumentPath,
             credit_card_name: creditCard!.name,
@@ -152,7 +153,7 @@ export function VerificationWizard() {
         .from('digital_signatures')
         .insert([
           {
-            reservation_id: reservationData.id,
+            reservation_id: reservationId,
             signature_data: signatureDataURL,
             form_data: {
               ...formData,

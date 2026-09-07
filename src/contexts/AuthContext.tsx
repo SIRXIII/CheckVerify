@@ -7,7 +7,7 @@ interface AuthContextType {
   userType: 'traveler' | 'admin' | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userType: 'traveler' | 'admin') => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string, userType: 'traveler' | 'admin') => {
+  const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -97,11 +97,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data.user) {
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .upsert([
+        .insert([
           {
             id: data.user.id,
             email: data.user.email,
-            user_type: userType,
+            user_type: 'traveler',
           },
         ]);
       if (profileError) throw profileError;

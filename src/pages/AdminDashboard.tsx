@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, FileText, Clock, CheckCircle, XCircle, TrendingUp, Eye } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardStats {
   totalSubmissions: number;
@@ -25,10 +26,16 @@ export function AdminDashboard() {
     recentSubmissions: [],
   });
   const [loading, setLoading] = useState(true);
+  const { user, userType, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    fetchDashboardStats();
-  }, []);
+    if (authLoading) return;
+    if (user && userType === 'admin') {
+      fetchDashboardStats();
+    } else {
+      setLoading(false);
+    }
+  }, [user, userType, authLoading]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -92,7 +99,7 @@ export function AdminDashboard() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -110,6 +117,10 @@ export function AdminDashboard() {
         </div>
       </div>
     );
+  }
+
+  if (!(user && userType === 'admin')) {
+    return <div className="p-8 text-red-600">You are not authorized to view this page.</div>;
   }
 
   return (

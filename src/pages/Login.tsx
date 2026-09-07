@@ -4,15 +4,13 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Login() {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
 
-  const { signIn, signUp, user, userType } = useAuth();
+  const { signIn, user, userType } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,37 +28,13 @@ export function Login() {
     }
   }, [location]);
 
-  const ADMIN_INVITE_CODE = import.meta.env.VITE_ADMIN_INVITE_CODE;
-
-  const handleToggle = () => {
-    if (isSignUp) {
-      setIsSignUp(false);
-      setInviteCode('');
-      return;
-    }
-    const code = window.prompt('Enter admin invite code');
-    if (code === ADMIN_INVITE_CODE) {
-      setInviteCode(code);
-      setIsSignUp(true);
-    } else {
-      setError('Invalid invite code');
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      if (isSignUp) {
-        if (inviteCode !== ADMIN_INVITE_CODE) {
-          throw new Error('Invalid invite code');
-        }
-        await signUp(email, password, 'admin');
-      } else {
-        await signIn(email, password);
-      }
+      await signIn(email, password);
       navigate('/admin/dashboard');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An error occurred';
@@ -85,7 +59,7 @@ export function Login() {
               Admin Access
             </h2>
             <p className="text-gray-600">
-              {isSignUp ? 'Create admin account' : 'Sign in to admin dashboard'}
+              Sign in to admin dashboard
             </p>
           </div>
 
@@ -135,47 +109,22 @@ export function Login() {
               </div>
             </div>
 
-            {isSignUp && (
-              <div>
-                <label htmlFor="invite" className="block text-sm font-medium text-gray-700 mb-2">
-                  Admin Invite Code
-                </label>
-                <input
-                  id="invite"
-                  type="text"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
-                  placeholder="Enter invite code"
-                />
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-hostla-primary hover:bg-hostla-secondary text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
-              {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
+              {loading ? 'Processing...' : 'Sign In'}
             </button>
           </form>
 
           <div className="mt-6 text-center space-y-3">
-            {!isSignUp && (
-              <button
-                type="button"
-                onClick={() => navigate('/reset-password')}
-                className="block w-full text-sm text-gray-500 hover:text-hostla-primary transition-colors"
-              >
-                Forgot your password?
-              </button>
-            )}
             <button
-              onClick={handleToggle}
-              className="text-hostla-primary hover:text-hostla-secondary font-medium transition-colors"
+              type="button"
+              onClick={() => navigate('/reset-password')}
+              className="block w-full text-sm text-gray-500 hover:text-hostla-primary transition-colors"
             >
-              {isSignUp ? 'Back to sign in' : 'Have an admin invite? Sign up'}
+              Forgot your password?
             </button>
           </div>
         </div>
