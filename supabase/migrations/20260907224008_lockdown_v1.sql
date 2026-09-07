@@ -68,8 +68,6 @@
   Also verify: `select public, file_size_limit, allowed_mime_types from
   storage.buckets where id = 'documents';` -> public=false,
   file_size_limit=5242880, allowed_mime_types={image/jpeg,image/png}.
-  And: `select id from storage.buckets where id = 'verification_uploads';`
-  -> no rows.
   ---------------------------------------------------------------------
 */
 
@@ -295,8 +293,9 @@ CREATE POLICY "admin_read_documents"
 
 -- No update/delete policies on storage.objects for the documents bucket.
 
-DELETE FROM storage.objects WHERE bucket_id = 'verification_uploads';
-DELETE FROM storage.buckets WHERE id = 'verification_uploads';
+-- NOTE: the unused, empty, private bucket `verification_uploads` must be removed via the Storage API
+-- (direct DELETE on storage tables is blocked by storage.protect_delete()).
+-- (Rest of this migration was applied live on 2026-09-07 via Supabase MCP.)
 
 -- ---------------------------------------------------------------------
 -- 7. Pin search_path on the pre-existing trigger function
