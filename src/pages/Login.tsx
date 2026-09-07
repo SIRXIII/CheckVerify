@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -126,6 +126,12 @@ export function Login() {
             >
               Forgot your password?
             </button>
+            <Link
+              to="/signup"
+              className="block w-full text-sm text-gray-500 hover:text-hostla-primary transition-colors"
+            >
+              Create an organization
+            </Link>
           </div>
         </div>
       </div>
