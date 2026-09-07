@@ -22,7 +22,8 @@ Set these in Cloudflare Pages dashboard (Settings > Environment Variables):
 | :--- | :--- |
 | `VITE_SUPABASE_URL` | The URL of your Supabase project. |
 | `VITE_SUPABASE_ANON_KEY` | The anonymous public key for your Supabase project. |
-| `VITE_ADMIN_INVITE_CODE` | The code required to create a new admin account. |
+
+Admin accounts are granted server-side (SQL) until the org invite flow ships.
 
 ### Runtime Variables (Server-side, for Pages Functions)
 
