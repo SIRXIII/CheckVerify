@@ -3,7 +3,7 @@
 
   Captured 2026-09-07 from project nwctkkdmbczpyhwqqonc (Check-In Verify).
 
-  Why: the live database has drifted from what `supabase/migrations/*.sql`
+  Why: the live database has drifted from what the files under `supabase/migrations/`
   would produce if replayed from scratch. The drift was introduced through
   ad hoc edits made in the Supabase dashboard (Table Editor / SQL Editor)
   rather than through migration files, so a fresh `db reset` / `db push`

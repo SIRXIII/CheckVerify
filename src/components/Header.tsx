@@ -2,10 +2,11 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { roleAtLeast } from '../lib/roles';
 
 export default function Header() {
   const navigate = useNavigate();
-  const { user, userType, loading: authLoading, signOut } = useAuth();
+  const { user, userType, loading: authLoading, signOut, orgs, activeOrg, setActiveOrg } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -32,8 +33,24 @@ export default function Header() {
 
           <nav className="flex items-center space-x-6">
             {!authLoading && (
-              user && userType === 'admin' ? (
+              user && (userType === 'admin' || activeOrg) ? (
                 <>
+                  {orgs.length > 1 ? (
+                    <select
+                      value={activeOrg?.org_id || ''}
+                      onChange={(e) => setActiveOrg(e.target.value)}
+                      className="bg-hostla-dark border border-gray-600 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-hostla-primary"
+                    >
+                      {orgs.map((org) => (
+                        <option key={org.org_id} value={org.org_id}>
+                          {org.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : activeOrg ? (
+                    <span className="text-sm text-gray-300">{activeOrg.name}</span>
+                  ) : null}
+
                   <Link
                     to="/admin/dashboard"
                     className="text-white hover:text-hostla-primary font-medium transition-colors"
@@ -47,6 +64,33 @@ export default function Header() {
                   >
                     Submissions
                   </Link>
+
+                  {activeOrg && roleAtLeast(activeOrg.role, 'staff') && (
+                    <Link
+                      to="/admin/properties"
+                      className="text-white hover:text-hostla-primary font-medium transition-colors"
+                    >
+                      Properties
+                    </Link>
+                  )}
+
+                  {activeOrg && roleAtLeast(activeOrg.role, 'admin') && (
+                    <Link
+                      to="/admin/team"
+                      className="text-white hover:text-hostla-primary font-medium transition-colors"
+                    >
+                      Team
+                    </Link>
+                  )}
+
+                  {activeOrg && roleAtLeast(activeOrg.role, 'admin') && (
+                    <Link
+                      to="/admin/settings"
+                      className="text-white hover:text-hostla-primary font-medium transition-colors"
+                    >
+                      Settings
+                    </Link>
+                  )}
 
                   <button
                     onClick={handleSignOut}

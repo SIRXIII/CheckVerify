@@ -1,11 +1,22 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import type { Membership } from '../types/database';
+
+const ACTIVE_ORG_KEY = 'cv.activeOrg';
+const PENDING_ORG_KEY = 'cv.pendingOrg';
+const PENDING_INVITE_KEY = 'cv.pendingInvite';
 
 interface AuthContextType {
   user: User | null;
   userType: 'traveler' | 'admin' | null;
   loading: boolean;
+  membershipsLoading: boolean;
+  orgs: Membership[];
+  activeOrg: Membership | null;
+  setActiveOrg: (orgId: string) => void;
+  isPlatformAdmin: boolean;
+  refreshMemberships: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -26,6 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<'traveler' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
+  const [membershipsLoading, setMembershipsLoading] = useState(true);
+  const [orgs, setOrgs] = useState<Membership[]>([]);
+  const [activeOrg, setActiveOrgState] = useState<Membership | null>(null);
+
+  // TODO: derive from a real platform-admin flag once that concept exists server-side.
+  const isPlatformAdmin = false;
 
   useEffect(() => {
     // Get initial session
@@ -33,8 +50,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchUserType(session.user.id);
+        refreshMemberships();
       } else {
         setLoading(false);
+        setMembershipsLoading(false);
       }
     });
 
@@ -44,14 +63,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchUserType(session.user.id);
+          refreshMemberships();
         } else {
           setUserType(null);
+          setOrgs([]);
+          setActiveOrgState(null);
           setLoading(false);
+          setMembershipsLoading(false);
         }
       }
     );
 
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUserType = async (userId: string) => {
@@ -77,6 +101,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyActiveOrg = (memberships: Membership[]) => {
+    const storedId = localStorage.getItem(ACTIVE_ORG_KEY);
+    const stillValid = memberships.find((m) => m.org_id === storedId);
+    if (stillValid) {
+      setActiveOrgState(stillValid);
+    } else if (memberships.length > 0) {
+      setActiveOrgState(memberships[0]);
+      localStorage.setItem(ACTIVE_ORG_KEY, memberships[0].org_id);
+    } else {
+      setActiveOrgState(null);
+    }
+  };
+
+  const refreshMemberships = async () => {
+    setMembershipsLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('my_memberships');
+      if (error) throw error;
+      let memberships = (data as Membership[]) || [];
+
+      // A user arriving via an invite link accepts it as soon as they have a session.
+      const pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
+      if (pendingInvite) {
+        try {
+          const { error: inviteError } = await supabase.rpc('accept_invite', { p_token: pendingInvite });
+          if (inviteError) throw inviteError;
+          localStorage.removeItem(PENDING_INVITE_KEY);
+          const refetch = await supabase.rpc('my_memberships');
+          memberships = (refetch.data as Membership[]) || memberships;
+        } catch (err) {
+          console.error('Error accepting pending invite:', err);
+        }
+      }
+
+      // A user who signed up before confirming their email creates their org on first login.
+      const pendingOrgRaw = localStorage.getItem(PENDING_ORG_KEY);
+      if (memberships.length === 0 && pendingOrgRaw) {
+        try {
+          const pendingOrg = JSON.parse(pendingOrgRaw) as { name: string; slug: string };
+          const { error: orgError } = await supabase.rpc('create_organization', { p_name: pendingOrg.name, p_slug: pendingOrg.slug });
+          if (orgError) throw orgError;
+          localStorage.removeItem(PENDING_ORG_KEY);
+          const refetch = await supabase.rpc('my_memberships');
+          memberships = (refetch.data as Membership[]) || memberships;
+        } catch (err) {
+          console.error('Error creating pending organization:', err);
+        }
+      }
+
+      setOrgs(memberships);
+      applyActiveOrg(memberships);
+    } catch (error) {
+      console.error('Error fetching memberships:', error);
+      setOrgs([]);
+      setActiveOrgState(null);
+    } finally {
+      setMembershipsLoading(false);
+    }
+  };
+
+  const setActiveOrg = (orgId: string) => {
+    const found = orgs.find((o) => o.org_id === orgId);
+    if (!found) return;
+    setActiveOrgState(found);
+    localStorage.setItem(ACTIVE_ORG_KEY, orgId);
   };
 
   const signIn = async (email: string, password: string) => {
@@ -117,6 +208,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     userType,
     loading,
+    membershipsLoading,
+    orgs,
+    activeOrg,
+    setActiveOrg,
+    isPlatformAdmin,
+    refreshMemberships,
     signIn,
     signUp,
     signOut,
