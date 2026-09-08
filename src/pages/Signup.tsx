@@ -19,6 +19,7 @@ export function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
+  const [hasPendingInvite] = useState(() => Boolean(localStorage.getItem('cv.pendingInvite')));
 
   const { refreshMemberships } = useAuth();
   const navigate = useNavigate();
@@ -40,21 +41,31 @@ export function Signup() {
     setLoading(true);
     setError('');
 
+    if (!hasPendingInvite && !/^[a-z0-9-]{3,40}$/.test(slug)) {
+      setError('URL slug must be 3-40 characters, using only lowercase letters, numbers, and hyphens.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError) throw signUpError;
 
       if (data.session) {
-        const { error: orgError } = await supabase.rpc('create_organization', {
-          p_name: companyName,
-          p_slug: slug,
-        });
-        if (orgError) throw orgError;
+        if (!hasPendingInvite) {
+          const { error: orgError } = await supabase.rpc('create_organization', {
+            p_name: companyName,
+            p_slug: slug,
+          });
+          if (orgError) throw orgError;
+        }
 
         await refreshMemberships();
-        navigate('/admin/dashboard');
+        navigate('/admin/properties'); // org-scoped landing; legacy /admin/dashboard is Host LA (platform-admin) only in Phase 1
       } else {
-        localStorage.setItem('cv.pendingOrg', JSON.stringify({ name: companyName, slug }));
+        if (!hasPendingInvite) {
+          localStorage.setItem('cv.pendingOrg', JSON.stringify({ name: companyName, slug }));
+        }
         setPendingConfirmation(true);
       }
     } catch (err: unknown) {
@@ -107,36 +118,41 @@ export function Signup() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
-                Company Name
-              </label>
-              <input
-                id="companyName"
-                type="text"
-                value={companyName}
-                onChange={(e) => handleNameChange(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
-                placeholder="Acme Hospitality"
-              />
-            </div>
+            {!hasPendingInvite && (
+              <>
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Name
+                  </label>
+                  <input
+                    id="companyName"
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
+                    placeholder="Acme Hospitality"
+                  />
+                </div>
 
-            <div>
-              <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-2">
-                URL Slug
-              </label>
-              <input
-                id="slug"
-                type="text"
-                value={slug}
-                onChange={(e) => handleSlugChange(e.target.value)}
-                required
-                pattern="[a-z0-9-]+"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
-                placeholder="acme-hospitality"
-              />
-            </div>
+                <div>
+                  <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-2">
+                    URL Slug
+                  </label>
+                  <input
+                    id="slug"
+                    type="text"
+                    value={slug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                    required
+                    pattern="[a-z0-9-]{3,40}"
+                    title="3-40 characters: lowercase letters, numbers, and hyphens only."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-hostla-primary focus:border-transparent transition-all duration-200"
+                    placeholder="acme-hospitality"
+                  />
+                </div>
+              </>
+            )}
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">

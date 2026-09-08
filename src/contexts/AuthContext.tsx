@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   userType: 'traveler' | 'admin' | null;
   loading: boolean;
+  membershipsLoading: boolean;
   orgs: Membership[];
   activeOrg: Membership | null;
   setActiveOrg: (orgId: string) => void;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<'traveler' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
+  const [membershipsLoading, setMembershipsLoading] = useState(true);
   const [orgs, setOrgs] = useState<Membership[]>([]);
   const [activeOrg, setActiveOrgState] = useState<Membership | null>(null);
 
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshMemberships();
       } else {
         setLoading(false);
+        setMembershipsLoading(false);
       }
     });
 
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setOrgs([]);
           setActiveOrgState(null);
           setLoading(false);
+          setMembershipsLoading(false);
         }
       }
     );
@@ -113,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshMemberships = async () => {
+    setMembershipsLoading(true);
     try {
       const { data, error } = await supabase.rpc('my_memberships');
       if (error) throw error;
@@ -122,7 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
       if (pendingInvite) {
         try {
-          await supabase.rpc('accept_invite', { p_token: pendingInvite });
+          const { error: inviteError } = await supabase.rpc('accept_invite', { p_token: pendingInvite });
+          if (inviteError) throw inviteError;
           localStorage.removeItem(PENDING_INVITE_KEY);
           const refetch = await supabase.rpc('my_memberships');
           memberships = (refetch.data as Membership[]) || memberships;
@@ -136,7 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (memberships.length === 0 && pendingOrgRaw) {
         try {
           const pendingOrg = JSON.parse(pendingOrgRaw) as { name: string; slug: string };
-          await supabase.rpc('create_organization', { p_name: pendingOrg.name, p_slug: pendingOrg.slug });
+          const { error: orgError } = await supabase.rpc('create_organization', { p_name: pendingOrg.name, p_slug: pendingOrg.slug });
+          if (orgError) throw orgError;
           localStorage.removeItem(PENDING_ORG_KEY);
           const refetch = await supabase.rpc('my_memberships');
           memberships = (refetch.data as Membership[]) || memberships;
@@ -151,6 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching memberships:', error);
       setOrgs([]);
       setActiveOrgState(null);
+    } finally {
+      setMembershipsLoading(false);
     }
   };
 
@@ -199,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     userType,
     loading,
+    membershipsLoading,
     orgs,
     activeOrg,
     setActiveOrg,

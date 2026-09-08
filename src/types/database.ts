@@ -55,17 +55,21 @@ export interface Verification {
   reservation_id: string;
   status: string;
   risk_score: number | null;
-  risk_flags: Record<string, unknown> | null;
+  risk_flags: unknown[];
   submitted_at: string | null;
+  submitted_ip: string | null;
+  submitted_user_agent: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   decision_reason: string | null;
   instructions_released_at: string | null;
+  expires_at: string | null;
   created_at: string;
+  updated_at: string | null;
 }
 
 export interface AuditEvent {
-  id: string;
+  id: number;
   org_id: string;
   actor_type: string;
   actor_id: string | null;

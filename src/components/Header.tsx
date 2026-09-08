@@ -33,7 +33,7 @@ export default function Header() {
 
           <nav className="flex items-center space-x-6">
             {!authLoading && (
-              user && userType === 'admin' ? (
+              user && (userType === 'admin' || activeOrg) ? (
                 <>
                   {orgs.length > 1 ? (
                     <select

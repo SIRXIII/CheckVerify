@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export function AcceptInvite() {
   const { token } = useParams<{ token: string }>();
-  const { user, loading: authLoading, refreshMemberships, setActiveOrg } = useAuth();
+  const { user, loading: authLoading, refreshMemberships } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
@@ -24,9 +24,9 @@ export function AcceptInvite() {
       try {
         const { data, error } = await supabase.rpc('accept_invite', { p_token: token });
         if (error) throw error;
+        if (data) localStorage.setItem('cv.activeOrg', data as string);
         await refreshMemberships();
-        if (data) setActiveOrg(data as string);
-        navigate('/admin/dashboard');
+        navigate('/admin/properties'); // org-scoped landing; legacy /admin/dashboard is Host LA (platform-admin) only in Phase 1
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to accept invite');
       } finally {
